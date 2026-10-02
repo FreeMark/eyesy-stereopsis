@@ -1,0 +1,3 @@
+# the EYESY is Linux: keep every text file LF, also in a Windows checkout
+* text=auto eol=lf
+*.ttf binary

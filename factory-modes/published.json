@@ -1,0 +1,545 @@
+{
+ "modes": {
+  "S - 0 Arrival Scope": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "a066419064111b08da23e0bc34da0dfae8a352dfc6b4b1790d7be98462f65aa3"
+  },
+  "S - AA Selector": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "7cc59d4827fabd6f1272215f0c423a9013b570ebfb221e791170580fef8e7f05"
+  },
+  "S - Amp Color": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "b7e4959b4731ade0a207f3a3b8441ac5569e7abac3ecc445ac956a566b1b05a1"
+  },
+  "S - Amp Color - 5gon Filled": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "0fff6d82f5d8b225169782cc0ce6caf424b15560adefd2dd31eb8c207d703d48"
+  },
+  "S - Amp Color - 5gon Outlines": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "f4d423c970cad81604b5f03a9d01a8188c0b5ca285f63854459cf916ee11e3dd"
+  },
+  "S - Amp Color - Circles": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "41bdf008609f678944d566f695e484a49abf1835a0072b6e718a48a4d03f5a19"
+  },
+  "S - Amp Color - Rectangles": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "d432f28d7beff90983005580ee5ececb39b4b4acdabbcfc8e00b6e0f286440bc"
+  },
+  "S - Aquarium": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "339be5801c85acf66eff97064539deb8506523c63068c610533ccca88af9c837"
+  },
+  "S - Arcway": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "f9fe936513cb23d80d5f09fc952a18719f5eddd73c3b71ed612e7158aa4543a1"
+  },
+  "S - Arcway Black": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "09f0be676d33a906f63d69bc1409723b69ad297f3f943cec9d335d5022cb629e"
+  },
+  "S - Audio Printer": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "9f1d76c510a8df5b879bf0aa758d816ab8f29e0348cf453c720ebb91b6514675"
+  },
+  "S - Bezier H Scope": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "67057fa9c05068206d5c49bae6f45409adbf21c7e5ab69d1a12828b1fa8daca3"
+  },
+  "S - Bezier V Scope": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "adf9e25f589d2a33463417a95bc4b5a7c15363c1fdbea5206470b2714cef7c1d"
+  },
+  "S - Bits Horizontal": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "179e9e33860430cb6c5648267b9c7c129fc13491c88ff2f3b3f78277ad5c8ae0"
+  },
+  "S - Bits Vertical": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "53377bb5027b92ce7fce79aefe7d5a0d4a9bdf7ec7d3f7157807ef747be1c4a0"
+  },
+  "S - Boids": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "48d5cb061274446b33aca3509e41f1afe22a0a736d7f270a0b0197ad7d61ee6d"
+  },
+  "S - Breezy Feather LFO": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "f16d182653f37e1bd75108abb66f9ebda6b63fd338903e4085c77267b7604351"
+  },
+  "S - Circle Row - LFO": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "f133956927ffe8d0e1deee0464690cc75c39bb2ea885a6ce1c3ea78dbb36536b"
+  },
+  "S - Circle Scope": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "445ad5d357c7f6abf8b31f9f5e6164b9a3420783f54329ac9a35d6c24149be8f"
+  },
+  "S - Circle Scope - Image": {
+   "adapted": true,
+   "files_published": 5,
+   "published_sha256": "628fe17589c5e8b25bdf51c327fa7d0ab635cd3189d38bed117ccc850e67f44d"
+  },
+  "S - Circle Scope - Opposite Colors": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "25a835c73c232f7c77f28084dc0ed0d063223fc0c86867a3980782e2e7e61d71"
+  },
+  "S - Circular Trigon Field": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "d8503ced9b895221fbe35cd3d6260356e5b64f1051d59ad3ce5fc6152aebe2b6"
+  },
+  "S - Classic Horizontal": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "6b768efefb0f640b94e28b736e5abd21bcd9abaf06f8645dfc6e13768ded036e"
+  },
+  "S - Classic Vertical": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "fece9c18526342f437f458209f8d5864cde79371d377511da2326a77620b3c7b"
+  },
+  "S - Concentric": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "ff1496f3bcd1eb39e1442d462029ed90bb5d7f2086a2cd444f10b6b955a86876"
+  },
+  "S - Cone Scope": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "b705502e2b7c4d3d454b8a1ae93ecdf22bf34a1dce0196cdc73b1da5942d244a"
+  },
+  "S - Dancing Circle - Image": {
+   "adapted": true,
+   "files_published": 3,
+   "published_sha256": "715a00ad7f41470096ebe33d616abd81a6f4523f422817b3b88ae4ceba69c666"
+  },
+  "S - Five Lines Spin": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "b3469519ece96fffe3ae6d55e9e56a683640e377c86976999bf413be9066d05f"
+  },
+  "S - Folia Angles": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "d9c75f0caeea2f709f02da5192ce682fefd86f7895f9c8d448b21981a12932e0"
+  },
+  "S - Folia Curves": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "d5f888ac308eb25fd40fb5d15c9b1fb190ebdaaccd2fdd925d3ce88674585fd6"
+  },
+  "S - Football Scope": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "d12c55cc950794b85eba80a85e75940fa64fc32a52939831706077249a8d928a"
+  },
+  "S - Googly Eyes": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "7eb92ebd9e9792c5bc3b3a0c747705e01c0b6229afa3686e37bf56c7777695f0"
+  },
+  "S - Gradient Cloud": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "1873a69ca51f6cedd7b326f0f59db9297e1037cae44e859be78aea2fd4010a64"
+  },
+  "S - Gradient Column": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "1a9f481b51f96042c21e8bf182fd51e924956812b57f5465ae661f8cd5bcc1bb"
+  },
+  "S - Gradient Friend": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "41a1f616a59b04324957d63ad663549330604705e4291ba0f3874b2407a2947c"
+  },
+  "S - Grid Circles - Column Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "3bf44fac04ffcf65fa535e9087dcb95d2d636737e2c7f1832b7533aaf6d655ae"
+  },
+  "S - Grid Circles - Outlined": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "95ce11dbc1019353628eb75ceca2fa9bbcef78153acbbf8563efe6f75e9c3e00"
+  },
+  "S - Grid Circles - Outlined Column Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "97819612a715e87d177ae77bda5215843691e2e590535ddd433126d62662f0a6"
+  },
+  "S - Grid Circles - Patchwork Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "6c4b0d979c9fc5ceafa68a0854631f141204135f2bee8fdd2fb469973e3bf019"
+  },
+  "S - Grid Circles - Uniform Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "8fa8f0c2738486c7afbaeee33622994ea8f48cc2ab819c503c7aab7d01f9e539"
+  },
+  "S - Grid Polygons - Column Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "bc6cea72071de33f9975dfc90b21b5677f0d2d57fe9885845f4b536d0c503e53"
+  },
+  "S - Grid Polygons - Patchwork Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "a1f9e5820a14141b8d4871e9807cb8106c9f6680775a4226fe5312d2533a71a2"
+  },
+  "S - Grid Polygons - Uniform Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "7593af10a68fc4b1c323ae24924d5a4f7b8a65dbc3ee44e64d1df36235d72268"
+  },
+  "S - Grid Slide Square - Filled Column Color": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "ca06c52cfaa0896dd7de2828b9ed1c999038612d54eefaf8057ecf4168f6ec86"
+  },
+  "S - Grid Slide Square - Filled Patchwork Color": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "0850158c4e3b231e9fe772ec20ca262d0e385b7a6d6fd2737a28f7b4ffd30cb4"
+  },
+  "S - Grid Slide Square - Filled Uniform Color": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "4e9be807076adec09f3d48e266318c3823da3f9ecdb93e56c3829a2963dd743b"
+  },
+  "S - Grid Slide Square - Unfilled Column Color": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "2739d58de91d9e5489f7d85d033ebd796f2cf1f22fb07fbef3e1e6e3fb40f32f"
+  },
+  "S - Grid Slide Square - Unfilled Patchwork Color": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "58b329372cc96ba0a81e6c3b0f1604abf2d41b27031f3b27fc1bf065f9df760e"
+  },
+  "S - Grid Slide Square - Unfilled Uniform Color": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "44a9e95417a73d72457e3b8aa178de8abbfc60ec0e381022c2a52115b74e98a1"
+  },
+  "S - Grid Triangles - Filled Column Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "1b448f33e198ad36e265305c09c4db3d7f960160445168c917df65260c8d07ba"
+  },
+  "S - Grid Triangles - Filled Patchwork Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "bb7a6169af87ecca269ef716535bf1af8cb2cece37c014bc6f8e89c66bcf9909"
+  },
+  "S - Grid Triangles - Filled Uniform Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "872cedf948441833f9db2cc12012c5ca1df4a2d6c808e8ddbebdf28afabaa503"
+  },
+  "S - Grid Triangles - Unfilled Column Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "415e578e3817e136984ff9f7cc320b8aae7c711408097052965a2a5eae4da68c"
+  },
+  "S - Grid Triangles - Unfilled Patchwork Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "d09e5abb9c04a5137435bd88b7e1eb83b804c56f128e33d1212960c112533743"
+  },
+  "S - Grid Triangles - Unfilled Uniform Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "82297020f38794efac073a879df3b634140f9363f7dd4b3dab170caee574329c"
+  },
+  "S - H Circles - Image": {
+   "adapted": false,
+   "files_published": 3,
+   "published_sha256": "c95885425d740783b2b68c6288d921c91ed46c56fc1daffee9dd856b527e4c7d"
+  },
+  "S - Horizontal + Trails": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "fe3bd534d28e8b37302595b340d065f9b75fbc57070043d6b84f025c8f1dbb2a"
+  },
+  "S - Line Bounce Four - LFO Alternate": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "a28d0e842e7cde3f5a189353e476ec0eaeb24c047ddc4b76c5c28a3e2e4a20ed"
+  },
+  "S - Line Bounce Two - LFO Alternate": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "b4fc5263f871294799405dfc2cd2d7bb6357be6e0a91c40c87ff0b3f99fe6e2a"
+  },
+  "S - Line Traveller": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "0406667a2dde574caed68d0af51e4b9147839d8882af70b66733fca28e589f9e"
+  },
+  "S - Mirror Grid": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "1e902d50a7d6fa890ed7a3edf4616ce39199f6ccf05081e455bd3d8d2ed7f6c1"
+  },
+  "S - Mirror Grid - Inverse": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "8e0cdc704618aaad6ea5e22eaee0b01b644ddfb0616e99a5c36e973081b8684c"
+  },
+  "S - Nested Ellipses - Filled": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "cd0aac4eccdc318dfec3f74a8077c821f6f1ec23c690dfef1e41db172786b0cd"
+  },
+  "S - Nested Ellipses - Outlines": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "1c89c5c3d41f93a51911c04ca86811598047615674eeecf7d952b5c2025eeae9"
+  },
+  "S - Oscilloscope": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "a4702f345c48bfffdb92a7440609a97183c9af756511f802edabaa4998168598"
+  },
+  "S - Perspective Lines": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "971369608f51193ed6c29398058ee593d562c3ae51370060fec9e07fdaa2dfdb"
+  },
+  "S - Radial Scope - Rotate Stepped Color": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "7afb529e3296fb0dd3556f97ab74945ff8a18a4a6fa981de10164bc5246141f8"
+  },
+  "S - Radial Scope - Rotate Uniform Color": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "274793f7456d20bc972441bf59e4058fe94346b1b8ba91da25afb87c20bbb2e3"
+  },
+  "S - Radiating Square - Stepped Color": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "820e7ac754fe9cf89ccbe88733b3ae049b4e0109f5286adad41eebfbef95c985"
+  },
+  "S - Radiating Square - Uniform Color": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "bbbb23d31845153d98cae99f9f2190106976ac1d49a6e8d32369daab6bfeec54"
+  },
+  "S - Sound Jaws - Stepped Color": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "76dd43250d7198164d2619effd7bdf5b76e7777ffbb7d7574b89548fd06e2480"
+  },
+  "S - Sound Jaws - Uniform Color": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "b1bda7092ff1493ae47849bfa1fe71255f8492cc3a8eb834356f1ddf1411ce71"
+  },
+  "S - Spinning Discs": {
+   "adapted": true,
+   "files_published": 24,
+   "published_sha256": "7d56241bd295d2f3cc4c960d9475af61561418c703fe7711f860ba5ff2ce3c6d"
+  },
+  "S - Square Shadows - Uniform Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "91b2507ab30ffa99a22f8f78bc01cea7d0a1bc4969955f8742d6c37436770303"
+  },
+  "S - Three Scopes": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "d4e50b12848984808e0a13396caf81b57e908530da62ae16bc55395e8a92dcff"
+  },
+  "S - Two Scopes": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "0bb10447231bae0a5edaf785fd7da36dd25d8c87d241e7b6e2e45bb2594326ff"
+  },
+  "S - X Scope": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "09514a4ac27bed504d0827c66d44638b2266dce489c5e0d24329b4cc4020e88b"
+  },
+  "S - Zoom Scope": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "8fac1e60893da8aaed97a4e82a7ee67067f046460f2e66bb94ba8f6a749fe527"
+  },
+  "T - Ball of Mirrors": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "f511e2e9b5390fea4deb345414777d66f7b99caa44ad43229059e0897d7a94d9"
+  },
+  "T - Ball of Mirrors - Trails": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "84483d13b732f474f2ed0c3f7a7dcb5d8b9677f58e021f6214d699bfb727ec1c"
+  },
+  "T - Basic Image": {
+   "adapted": false,
+   "files_published": 6,
+   "published_sha256": "5d9598f77ff8c0e2e03f93834610e0dd7eba05b789ded0ce0b5393adf76780d8"
+  },
+  "T - Bezier Cousins - Trails": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "b534ff8ab7a89215cef1ecb371c3416f24a76a9f2693c40a43907adc284e203d"
+  },
+  "T - Bits H - Row Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "a7734e4c1935d890fe952aa5abc06cc40475b447ac063048309a41ddd0c30b99"
+  },
+  "T - Bits H - Uniform Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "641c67f8c32375bf0aaff9966c5a64c4bcdb50a07dc54ab2fbb931d378b37ff6"
+  },
+  "T - Bits V - Column Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "979f3b24e765e6807825749ff5c51b9baf2ca64de4a53ebde651c200f11bd981"
+  },
+  "T - Bits V - Uniform Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "85fb7b00cdf2df7ba14ef26673023df260df56dacdbe713a964d77d819f4b82e"
+  },
+  "T - Density Units": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "5a563bc40f93ea848c94a79cca09fedaa8f73e5cfc83fd145d6d26cdebd52c91"
+  },
+  "T - Draws Hashmarks - Angled Stepped Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "93aa1fbae3d45ab2901161ba7f1e73c07026d1b848478e29756913793eabd339"
+  },
+  "T - Draws Hashmarks - Angled Uniform Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "2654cb8d958c7a7a625fb99f8d8942fda9c17a759b331e354eda77bf00ea0461"
+  },
+  "T - Draws Hashmarks - Stepped Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "336db6290b552ea2188d1a30be83cb1ffbd71784910956af8d9dcfbe766b65e3"
+  },
+  "T - Draws Hashmarks - Uniform Color": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "3446b19c43b8929070b8d958221d89c4744d47a587da999107366d2b3d771017"
+  },
+  "T - Font Patterns": {
+   "adapted": false,
+   "files_published": 2,
+   "published_sha256": "b6910cc460c481b46f5c69a6ecea9e9709cdc1c34675aa93c3180d587007dd68"
+  },
+  "T - Font Recedes": {
+   "adapted": false,
+   "files_published": 2,
+   "published_sha256": "0164c4613970f99e083da473a9570f3350eaf2d09773937171bd4f56d6d1812f"
+  },
+  "T - Image + Circle": {
+   "adapted": false,
+   "files_published": 6,
+   "published_sha256": "26ecc59947620db8bb313900a7b04c9839cb643fcb8bb05a8540598b32aa1bc7"
+  },
+  "T - Line Rotate - Trails": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "99e0c74695571c9ee34a063bf84c65ac075ae57f76ab7d641bcf67c937b5aca7"
+  },
+  "T - MIDI Grid": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "06c785891e0c95e2dde9af33ab04ff62b2795f6cf27d4ec77b6b1d6072310f59"
+  },
+  "T - MIDI Note Printer": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "a09940ea2f749bceb78b74a93189209247af7e0a8e2f2f3ecba9e113d6da3f9c"
+  },
+  "T - Magnify Cloud - LFO": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "062395b8f9092d8b6769fb529fc5183e3dd823a58b18bdb580818762a32e8c36"
+  },
+  "T - Marching Four - Image": {
+   "adapted": false,
+   "files_published": 6,
+   "published_sha256": "f91210bdbc1a34d16294e2f2cafa92067b492d97c1bf855cf9675bd5a15cad86"
+  },
+  "T - Migrating Circle Grids": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "8b16cd49540f4a9ee1f17db11b59d3135b251b168d139b762eb0b2b9e48f197c"
+  },
+  "T - Origami Triangles": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "aaf8553b6399a3aa980b35c5a6967c3901da5d5aea394f0e9c8ce576ec3f49be"
+  },
+  "T - Reckie": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "9915afe14920fa9e1c8c734bd7b4c9c87f33535c0e69f0fa1a39ba23ffaf961b"
+  },
+  "T - Slideshow Grid-AG-Alpha": {
+   "adapted": false,
+   "files_published": 5,
+   "published_sha256": "d7284ab19c3768966819c16db1623d128db9ea12316186c2f89828e312c48dcb"
+  },
+  "T - Tiles - Filled": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "5cb284cbd5c7b3d4d50d0bdb85aeff37fd30d7c7a067bd83065602ef46212111"
+  },
+  "T - Tiles - Outlines": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "80eb81b253c9c532a049f6f1f5fcd26df43047ae7c1bb66a702fcd8b94093f97"
+  },
+  "T - Trigon Traveller": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "3f299d7ca24f3d4e5ceb1369934dcd28463f38df11995768e8eceac58a06aaa8"
+  },
+  "T - Woven Feedback": {
+   "adapted": true,
+   "files_published": 1,
+   "published_sha256": "8e9d975950129171d68f732cef30d87b7e76d5ba3e00be99c4d47356d5d7167c"
+  },
+  "U - Timer": {
+   "adapted": false,
+   "files_published": 1,
+   "published_sha256": "842ab6a01e766b0a17eafde74b72afa9a120fa42f45278d5f1caa78f44864f1c"
+  }
+ },
+ "source": "github.com/critterandguitari/EYESY_Modes_OSv3, as published (BSD 2-Clause)"
+}
