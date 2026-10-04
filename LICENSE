@@ -21,7 +21,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 This licence covers the files written for this project outside engine/ and
-factory-modes/: modes/, install.py and docs/. engine/ is a fork of Critter &
-Guitari's EYESY_OS and stays under its BSD 3-Clause licence (engine/LICENSE.txt);
-factory-modes/ holds Critter & Guitari's modes under their BSD 2-Clause licence
-(factory-modes/LICENSE).
+factory-modes/: modes/, install.py and docs/, except the font in
+modes/14 - Swarm - Text (Indie Flower, SIL Open Font License 1.1: its OFL.txt is
+beside it). engine/ is a fork of Critter & Guitari's EYESY_OS and stays under its
+BSD 3-Clause licence (engine/LICENSE.txt); factory-modes/ holds Critter &
+Guitari's modes under their BSD 2-Clause licence (factory-modes/LICENSE).

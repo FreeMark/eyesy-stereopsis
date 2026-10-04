@@ -38,6 +38,8 @@
 #     next frame, saved in scale.json (set_render_size below)
 #   * eyesy.trig_audio (0.9.1): True when this frame's trig came only from the audio, so modes can tell a performer's
 #     Trigger (button, MIDI, the page) from the loudness trigger
+#   * the page's Text row (0.10): a mode with module-level get_text() and set_text(text) (14 - Swarm - Text) has its
+#     text shown and changed from the page (preview.py; set_text runs on this thread, once per frame)
 import os
 os.environ["SDL_VIDEODRIVER"] = "dummy"     # FORK: SDL never touches the screen (display.py does)
 os.environ["SDL_AUDIODRIVER"] = "dummy"     # FORK: pygame.init() must not open ALSA playback
@@ -75,7 +77,7 @@ from screen_flash_drive import ScreenFlashDrive
 
 FORK_DIR = os.environ.get("STEREOPSIS_DIR", "/sdcard/stereopsis")    # FORK: switches + crash marker live here
 TRIAL_FRAMES = 300
-STEREOPSIS_VERSION = "0.9.1"
+STEREOPSIS_VERSION = "0.10"
 
 
 def fork_flag(name, default=None):

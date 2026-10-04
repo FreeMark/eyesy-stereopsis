@@ -1,6 +1,6 @@
 # stereopsis for the EYESY
 
-A faster engine and thirteen new audio-reactive modes for the Critter & Guitari EYESY video synthesizer (OS v3.1),
+A faster engine and fourteen new audio-reactive modes for the Critter & Guitari EYESY video synthesizer (OS v3.1),
 installed over WiFi from your computer with one command, and removed again just as easily.
 
 Unofficial: not affiliated with or endorsed by Critter & Guitari.
@@ -19,8 +19,9 @@ Unofficial: not affiliated with or endorsed by Critter & Guitari.
     screen in ~11-17 ms instead of ~50
   - **a way back at any moment**: hold Shift + Persist for a second and the EYESY switches to Critter & Guitari's
     engine on the same mode (and back the same way)
-- **Thirteen modes**, first in the mode list (below): six figures of a 4096-drone light swarm, two soundfield
-  simulations, a circuit board, a transformer network, a 3D oscilloscope, a plasma globe and a fluid simulation.
+- **Fourteen modes**, first in the mode list (below): six figures of a 4096-drone light swarm, two soundfield
+  simulations, a circuit board, a transformer network, a 3D oscilloscope, a plasma globe, a fluid simulation, and a
+  word written by 2400 drones with real swarm physics (FREE.VET, or any text you type on the page).
   Their renderers are small C programs the EYESY compiles for itself the first time.
 - **The factory modes**: the 19 Critter & Guitari published after OS v3.1 are added, and 54 are adjusted so they
   move at their original speed at 60 frames a second.
@@ -57,7 +58,7 @@ stereopsis ever fails to start, the EYESY starts Critter & Guitari's engine inst
 What the installer puts on the card:
 
 - `/sdcard/stereopsis/engine`: the engine (and `/sdcard/stereopsis` its settings, as you change them)
-- `/sdcard/Modes/01 - Swarm - Tunnel` .. `13 - Soundfield Splats`, and `Z - Engine Lab`, the small mode that starts
+- `/sdcard/Modes/01 - Swarm - Tunnel` .. `14 - Swarm - Text`, and `Z - Engine Lab`, the small mode that starts
   stereopsis at every boot (leave it, and its name, as they are)
 - the factory modes' adjusted `main.py`, only where your card has exactly the version Critter & Guitari published;
   the originals are kept in `/sdcard/stereopsis/backup`. A factory mode you changed yourself is left alone.
@@ -71,6 +72,9 @@ What the installer puts on the card:
 - **Size**: the page's Size row sets what the mode on screen draws at: the display's size, half or a quarter (on a
   720p display 1280x720, 640x360 or 320x180). The display scales it to the screen for free, so a smaller size costs nothing but sharpness and lets a
   heavy mode run at 60 frames a second. It is remembered for each mode.
+- **Text**: on 14 - Swarm - Text the page shows a Text box: type a word, press Set, and the drones fly to it
+  (Reset goes back to the text in the mode's file). It is kept for next time, in the mode folder's `TEXT` file. To
+  change the default instead, edit `TEXT = "FREE.VET"` near the top of the mode's `main.py`.
 - **Switching engines**: hold **Shift**, then hold **Persist** as well, for a second (or click the page's **Stock
   engine** button twice). Critter & Guitari's engine opens on the same mode in about 15 seconds; back the same way
   (about 10 seconds). The EYESY keeps starting with the engine you chose last.
@@ -97,10 +101,14 @@ What the installer puts on the card:
 | 11 - Plasma Globe | plasma filaments, one band of the spectrum each, bowing and forking to the glass | voltage: a few calm filaments, up to a storm | turn | hold: a hand on the glass, every filament gathers to it; a tap touches it for a moment |
 | 12 - Ink | glowing ink in water, stirred by six jets that each play a part of the spectrum (a real fluid simulation) | swirl | turn: the jets circle the middle | a burst of every colour |
 | 13 - Soundfield Splats | the original soundfield: sound slowed ~1000x through a disc of 3000 air particles, the left and right channels as two sources | speed of sound | orbit | a clap from both sources |
+| 14 - Swarm - Text | a word written by 2400 drones along its outline, with free.vet's swarm physics: each drone springs to its place and pushes off its neighbours, so when the word is too small to hold them all they become a living blob fighting for room; the music pulses the lights, sends waves and ripples through the swarm and drifts the colours | size: a blob of drones fighting for room on the left, the whole word on the right | waves: none on the left, 3x on the right | a ripple out of the middle |
 
 On the swarm modes, knob 1 left of the middle moves the camera further away and right of it closer (the middle is the
 original framing); the knobs called orbit or turn hold still at their centre. Switching between the six swarm modes
-morphs the drones from one figure into the next. In 12 - Ink, knob 3 sets how long the ink lingers.
+morphs the drones from one figure into the next. In 12 - Ink, knob 3 sets how long the ink lingers. In 14 - Swarm -
+Text, knob 4 turns its rainbow around the colour wheel; the word always fills the width of the screen, and the settings
+at the top of its `main.py` (the physics, the audio effects and their amounts, the font) are the ones of the swarm
+simulator at sim.free.vet.
 
 ## Updating
 
@@ -145,10 +153,11 @@ them with `getattr(eyesy, name, default)` and a mode still runs on the stock eng
 |---|---|---|
 | `engine/` | stereopsis: Critter & Guitari's `EYESY_OS/engines/python` (commit 51cc186, OS v3.1) with every change marked `FORK:` in `main.py`, plus the display layer (`kms.c`), the audio analysis (`audio.c`, `analysis.py`) and the page (`preview.py`) | BSD 3-Clause (`engine/LICENSE.txt`): Critter & Guitari's code keeps their copyright; the changes are under the same terms |
 | `factory-modes/` | Critter & Guitari's 108 published OS v3 modes' `main.py`, 54 adjusted for 60 frames a second (and a fix to Circle Scope - Image, which does not load as published), with `published.json`: the published files' checksums, which the installer compares before replacing anything | BSD 2-Clause (`factory-modes/LICENSE`) |
-| `modes/` | the thirteen modes and the Engine Lab | MIT (`LICENSE`) |
+| `modes/` | the fourteen modes and the Engine Lab | MIT (`LICENSE`), except the font in `14 - Swarm - Text`: Indie Flower, SIL Open Font License 1.1 (its `OFL.txt` beside it) |
 | `install.py`, `docs/` | the installer and the engine notes | MIT (`LICENSE`) |
 
 The engine's font is Nunito (SIL Open Font License 1.1), as it ships with EYESY_OS. The swarm modes bring the drone
-swarm visualizer from free.vet to the EYESY.
+swarm visualizer and simulator from free.vet to the EYESY; 14 - Swarm - Text writes in Indie Flower by Kimberly
+Geswein (SIL Open Font License 1.1).
 
 stereopsis: seeing depth by fusing two views, for a synth called EYESY.

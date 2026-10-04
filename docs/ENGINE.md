@@ -24,7 +24,8 @@ and `analysis.py` (the audio analysis), `preview.py` (the page). The rest is ups
 
 Open it on a phone or a computer on the same network: the live picture (as HDMI shows it, OSD included) with the mode
 and frame rate on top, and the EYESY's controls: the five knobs, the mode (step or pick from the list), scene,
-foreground and background palette, OSD, Persist, Trigger, a screen grab, audio gain, Size, and Stock engine.
+foreground and background palette, OSD, Persist, Trigger, a screen grab, audio gain, Size, Text (for a mode that
+writes one, below), and Stock engine.
 
 - A knob set from the page is **held** (amber, with a tick where the real knob sits) until that knob on the EYESY is
   turned, the way a MIDI CC holds one; "Hand the knobs back" releases them all.
@@ -34,6 +35,16 @@ foreground and background palette, OSD, Persist, Trigger, a screen grab, audio g
   in `engine/preview.py`). `/control` takes only JSON and only from its own page's origin. There is no password,
   like the EYESY's own web editor: keep the EYESY on a network you trust. `/sdcard/stereopsis/CONTROLS` = 0 makes
   the page view-only; `PREVIEW` = 0 turns it off.
+
+## For mode authors: a text the page can change
+
+A mode that writes a text can let the page change it: give the module two functions, `get_text()` (the text on
+screen) and `set_text(text)` (a new one; return what you set, or None to refuse). The page then shows a Text row for
+that mode: the box shows `get_text()`, Set calls `set_text` with what was typed (up to 64 printable characters),
+Reset calls it with the module's `TEXT`. Both run on the engine's thread, between frames (`get_text` once a frame,
+for `/state.json` `"text"`, which is null for any other mode). Scripts: `{"act": "text", "value": "...",
+"mode": "<its name>"}` or `{"act": "text", "reset": true}` on `/control`. 14 - Swarm - Text keeps the text in
+its folder's `TEXT` file, so it survives a restart.
 
 ## For mode authors: the audio analysis
 

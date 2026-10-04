@@ -2,8 +2,9 @@
 computer on the same network: the live picture (MJPEG) with the mode and frame rate on top, and under it
 (beside it on a wide screen) the EYESY's controls: the five knobs, mode, scene, palettes, OSD, Persist,
 Trigger, screen grab and audio gain, the size the mode on screen draws at (0.9: the display's, half, a quarter; saved
-per mode) - and a button that switches to the stock engine on the same mode (while the stock engine runs, the Engine
-Lab answers on this address with a small page that switches back).
+per mode), the text of a mode that writes one (0.10: a mode with get_text() / set_text()) - and a button that switches
+to the stock engine on the same mode (while the stock engine runs, the Engine Lab answers on this address with a small
+page that switches back).
 
 The frames come from the compositor (kms.c): downscaled and JPEG-encoded on spare CPU cores, only while
 someone is watching, so an unwatched preview costs nothing. This file only serves them. It runs as a daemon
@@ -19,7 +20,7 @@ MIDI CC holds one (stock eyesy.cc_override_knob) until that knob on the EYESY is
   /frame.jpg    one current frame
   /state.json   mode, fps, knobs (and which are held), render size (and the display's), OSD / persist, scene,
                 palettes, gain, audio (stock peaks + the engine's analysis: levels, 32 bands, beats, tempo), the
-                frame scheduler's tier, perf totals
+                frame scheduler's tier, perf totals, the mode's text (null for a mode that writes none)
   /modes.json   the installed modes, in the EYESY's order
   /control      POST, JSON: one action or a list of up to 32 (see parse_action)
 Like the EYESY's web editor, it has no password: keep the EYESY on a network you trust. /control only takes
@@ -30,6 +31,7 @@ import collections
 import ctypes
 import json
 import math
+import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -93,7 +95,9 @@ input[type=range] { display: block; width: 100%; height: 40px; margin: 0; backgr
 .lbl { color: var(--dim); font-size: 12px; width: 44px; flex: 0 0 auto; }
 .val { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   text-align: center; }
-#release, #swap { flex: 0 0 auto; }
+#release, #swap, #textset, #textreset { flex: 0 0 auto; }
+#text { flex: 1 1 auto; min-width: 0; font: inherit; color: var(--text); background: var(--ctl);
+  border: 1px solid var(--line); border-radius: 8px; min-height: 44px; padding: 0 10px; }
 .size { flex: 1 1 0; min-width: 0; padding: 0 6px; font-variant-numeric: tabular-nums; }
 #swap.armed { border-color: var(--held); color: var(--held); }
 #meter { display: grid; grid-template-columns: 38px 1fr 64px; gap: 8px; align-items: center; }
@@ -145,6 +149,11 @@ input[type=range] { display: block; width: 100%; height: 40px; margin: 0; backgr
     <button class="size" data-size="full" aria-pressed="false">full</button>
     <button class="size" data-size="half" aria-pressed="false">half</button>
     <button class="size" data-size="quarter" aria-pressed="false">quarter</button></div>
+  <form class="row" id="textrow" hidden title="what this mode writes - kept for this mode"><span class="lbl">Text</span>
+    <input id="text" type="text" maxlength="64" autocomplete="off" spellcheck="false" enterkeyhint="done"
+      aria-label="the text this mode writes">
+    <button id="textset" type="submit">Set</button>
+    <button id="textreset" type="button" title="back to the text in the mode's file">Reset</button></form>
   <div id="gainrow"></div>
   <div id="meter" title="the engine's audio analysis: 32 bands from 50 Hz to 16 kHz, beats, tempo"><b>Audio</b>
     <canvas id="spec" aria-label="audio spectrum"></canvas><span id="bpm">&ndash;</span></div>
@@ -233,6 +242,17 @@ sel.addEventListener("change", () => { busy.mode = performance.now(); act({ act:
 $("release").addEventListener("click", () => act({ act: "release" }));
 const SIZES = { full: 1, half: 2, quarter: 4 };
 document.querySelectorAll(".size").forEach((b) => b.addEventListener("click", () => act({ act: "render", size: b.dataset.size })));
+// the Text row (0.10): a mode that writes a text; the box is left alone while you type in it
+const textrow = $("textrow"), textin = $("text");
+let curMode = "", shownText = null;
+textrow.addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (!textin.value.trim()) return;
+  busy.text = performance.now();
+  act({ act: "text", value: textin.value, mode: curMode });
+  textin.blur();
+});
+$("textreset").addEventListener("click", () => { busy.text = performance.now(); act({ act: "text", reset: true, mode: curMode }); });
 
 // switching to the stock engine: the first click arms the button for 4 s, the second switches; this page then
 // waits for the stock engine's small page, which answers on the same address, and reloads into it
@@ -324,6 +344,7 @@ function drawSpec(an) {
 }
 function render(s) {
   $("mode").textContent = s.mode;
+  curMode = s.mode;
   $("meta").textContent = [Math.round(s.fps) + " fps", "draws " + s.render[0] + TIMES + s.render[1],
     s.persist ? "persist" : "", s.scene || "", s.menu ? "menu open" : ""].filter(Boolean).join(DOT);
   document.body.classList.toggle("view", !s.controls);
@@ -346,6 +367,11 @@ function render(s) {
   $("release").disabled = !s.held.some(Boolean);
   $("swaprow").hidden = !s.swap;
   $("sizerow").hidden = !s.display;              // the display's size, half, a quarter: which one this mode draws at
+  textrow.hidden = typeof s.text !== "string";
+  if (typeof s.text === "string" && s.text !== shownText && document.activeElement !== textin && fresh("text")) {
+    textin.value = s.text;
+    shownText = s.text;
+  }
   if (s.display) document.querySelectorAll(".size").forEach((b) => {
     const w = Math.floor(s.display[0] / SIZES[b.dataset.size]), h = Math.floor(s.display[1] / SIZES[b.dataset.size]);
     b.textContent = w + TIMES + h;
@@ -415,6 +441,7 @@ class Preview(object):
         self.swap_ok = swap_ok                       # () -> whether switching to the stock engine can work here
         self.sched = None                            # main.py's frame Scheduler (0.8.1: its tier in /state.json)
         self.render_request = None                   # the page's Size buttons: "full" / "half" / "quarter" (0.9)
+        self.mode_text = None                        # the text of the mode on screen, if it writes one (0.10)
         self.queue = collections.deque(maxlen=256)   # checked actions from the page, applied by apply()
         self.server = None
         self.viewers = 0
@@ -457,6 +484,7 @@ class Preview(object):
                 "scene_count": len(ey.scenes), "fg": self._palette_name(ey.fg_palette),
                 "bg": self._palette_name(ey.bg_palette), "gain": float(ey.config.get("audio_gain", 0.0)),
                 "controls": bool(self.controls), "viewers": self.viewers, "sched": self._sched(),
+                "text": self.mode_text,
                 "audio": [float(ey.audio_peak), float(ey.audio_peak_r)],
                 "an": {"on": bool(getattr(ey, "audio_analysis", False)), "level": float(getattr(ey, "audio_level", 0)),
                        "bass": float(getattr(ey, "audio_bass", 0)), "mid": float(getattr(ey, "audio_mid", 0)),
@@ -488,6 +516,9 @@ class Preview(object):
           {"act": "swap"}                           switch to the stock engine on this mode (main.py swap_to_stock)
           {"act": "render", "size": "full"|"half"|"quarter"}   the mode on screen draws at the display's size, half
                                                     or a quarter of it, saved in scale.json (main.py set_render_size)
+          {"act": "text", "value": "...", "mode": "..."}   the text of a mode that writes one (its set_text: up to 64
+                                                    printable characters); "reset": true = the text in its file
+                                                    (its TEXT); with "mode", only if that mode is on screen
         """
         if not isinstance(a, dict):
             raise ValueError("an action is a JSON object")
@@ -525,6 +556,19 @@ class Preview(object):
             if not self.disp.comp:
                 raise ValueError("render sizes need the compositor (this EYESY runs without it)")
             return ("render", size)
+        if act == "text":
+            mode = a.get("mode")
+            if mode is not None and not isinstance(mode, str):
+                raise ValueError("mode must be a mode's name")
+            if a.get("reset") is True:
+                return ("text", None, mode)
+            t = a.get("value")
+            if not isinstance(t, str):
+                raise ValueError("value must be text")
+            t = "".join(ch for ch in t if ch.isprintable())[:64]
+            if not t.strip():
+                raise ValueError("the text is empty")
+            return ("text", t, mode)
         raise ValueError("unknown act")
 
     def control(self, headers, body):
@@ -602,8 +646,27 @@ class Preview(object):
                     ey.swap_request = "the page"       # the main loop switches right after this
                 elif k == "render":
                     self.render_request = c[1]         # the main loop sets it right after this (set_render_size)
+                elif k == "text":
+                    m = sys.modules.get(ey.mode)
+                    setter = getattr(m, "set_text", None)
+                    if callable(setter) and (c[2] is None or c[2] == ey.mode):
+                        got = setter(c[1] if c[1] is not None else str(getattr(m, "TEXT", "")))
+                        print("[stereopsis] %s: text %r from the page" % (ey.mode, got), flush=True)
             except Exception as e:
                 print("[stereopsis] preview control %r failed: %r" % (c, e), flush=True)
+        self.mode_text = self._mode_text()
+
+    def _mode_text(self):
+        """the text of the mode on screen, if it writes one: module-level get_text() and set_text() (0.10)"""
+        m = sys.modules.get(self.eyesy.mode)
+        get, put = getattr(m, "get_text", None), getattr(m, "set_text", None)
+        if not (callable(get) and callable(put)):
+            return None
+        try:
+            t = get()
+            return t if isinstance(t, str) else None
+        except Exception:
+            return None
 
     def next_jpeg(self, buf, seq, wait_s=0.25):
         """the next JPEG newer than seq, or None after wait_s"""

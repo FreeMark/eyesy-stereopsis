@@ -1,0 +1,571 @@
+import os
+import glob
+import math
+import time
+import ctypes
+import hashlib
+import platform
+import subprocess
+import threading
+import pygame
+
+# 14 - Swarm - Text
+#
+# free.vet's swarm sim writing a word in drones: FREE.VET unless you change it - TEXT below, or the Text box on
+# stereopsis's page. 2400 drones trace the word's outline in Indie Flower with the sim's neighbor physics: each one
+# springs to its place on the outline and pushes off any neighbour inside its safe zone, so a size too small to hold
+# them all becomes a living blob of drones fighting for room. The sim's audio rack moves them: the music pulses the
+# lights, the bass sends waves through the safe zones and every kick a ripple (the swarm adapts around them), the
+# bass swells the whole space, the treble makes the lights shimmer and the mids drift the colours. The text faces you
+# and fills the width of the screen. (The sim: sim.free.vet; its settings are the ones below.)
+#
+#Knob1 - size: 0.5x (a blob of drones fighting for room) .. 3x (the text, every drone in its place)
+#Knob2 - waves: the bass's waves through the swarm, none on the left .. 3x on the right
+#Knob3 - glow: bloom up to the middle; trails from 60 % up
+#Knob4 - colour: the rainbow across the text, turned around the colour wheel (the music's hue drift turns it too)
+#Knob5 - background color
+#Trigger - a ripple out of the middle of the text
+#
+# Best on stereopsis (its engine analyses the audio: spectrum, bands, waveform, kicks). On the stock engine it still
+# runs, on the level and the scope samples.
+# The renderer is a C kernel (textswarm.c + glow.h, next to this file) compiled ON the EYESY the first time the mode
+# runs (~30 s, in the background, one build at a time; a simple preview shows meanwhile). Files: textswarm_*.so =
+# compiled cache (safe to delete); .native_trial / .native_strikes = crash guard; NATIVE_OFF (exists = never use the
+# kernel; the crash guard writes it if the engine dies twice in a row while the kernel is on trial).
+# Dev switches (files containing a number): DEBUG (1 = timings to the log), THREADS (2 = the final pass on two cores,
+# the default; 1 = one), BENCH (1 or 2 = synthetic music instead of the input, for reproducible timings: 2 = a loud
+# club mix), COUNT (how many drones, default 2400), KBENCH (exists = time the renderer's inner loops
+# once, on the first frame, into the log), ASM (exists = also write the device's assembly of the kernel), DOWN (render
+# at 1/DOWN of the surface's size; default: the full size on stereopsis, half above 400 lines on the stock engine).
+# Written by tools/make_glow_modes.py from the template all glow.h modes share (edit that, not this file).
+
+KERNEL = "textswarm"
+KERNEL_VERSION = 1
+N_COMMON = 21                  # dt, knobs 1-5, fg rgb, bg rgb, level, bass, mid, treble, beat, kick, trig, prefilled, wave Hz
+COUNT = 2400
+KNOWN_GOOD_FRAMES = 60
+GUARD_SECONDS = 3.0
+STEREOPSIS = os.environ.get("STEREOPSIS") == "1"     # the engine this runs on (stereopsis sets it)
+
+# ---- the settings: change them here ---------------------------------------------------------------------------------
+TEXT = "FREE.VET"              # what the drones write, one line (stereopsis's page can change it live: see get_text)
+FONT = "IndieFlower-Regular.ttf"   # a .ttf / .otf in this folder (Indie Flower: SIL Open Font License, OFL.txt)
+# how many drones: COUNT, above (or a COUNT file in this folder)
+# free.vet's swarm sim as Free set it (its Swarm and Audio panels); 1 light unit (lu) ~ 0.1 m
+SAFE_ZONE = 1.0                # lu: drones push off any neighbour inside it
+SPEED = 25.0                   # lu/s
+RIGIDITY = 6.0                 # how hard a drone springs to its place
+AVOIDANCE = 53.0               # how hard it pushes off its neighbours
+DAMPING = 3.5
+SIZE_MIN, SIZE_MAX = 0.5, 3.0  # knob 1's range
+WAVES_MAX = 3.0                # knob 2's top
+PULSE = 2.0                    # the audio rack's amounts (0 = off)
+PUSH_AWAY = 0.0                # a share of the swarm inflating with the loudness (off, as in the sim)
+PUSH_SHARE = 0.15              # ... that share
+RIPPLES = 2.0
+BASS_SWELL = 1.0
+SHIMMER = 2.0
+HUE_DRIFT = 2.0
+INTENSITY = 1.0                # how strongly all of it hears the music
+BRIGHTNESS = 1.5
+DOT = 0.25                     # a drone's light: its radius in lu (its size on screen follows the zoom) ...
+DOT_MIN = 1.4                  # ... but never under this, px at 720 lines
+STARS = 180                    # faint stars behind it (0 = none)
+
+S = {}                 # all state lives here (the module is re-imported on reload)
+
+
+def _log(msg):
+    print("[textswarm] " + msg)
+
+
+def _num(root, name, default):
+    try:
+        return float(open(os.path.join(root, name)).read().strip())
+    except Exception:
+        return default
+
+
+# ---------------------------------------------------------------------------------------------- native build
+def _native_allowed(root):
+    """Crash guard. The marker is armed on the first native frame this mode actually DRAWS (not at load:
+    every mode loads at boot) and cleared after KNOWN_GOOD_FRAMES, or GUARD_SECONDS after it was armed while
+    the engine still runs (a mode shown for a moment, then the EYESY switched off, is not a crash). A marker
+    left by a dead engine means it died while the kernel was on trial. Strike 1: the fallback for this session.
+    Strike 2 in a row: NATIVE_OFF (permanent until deleted)."""
+    if os.path.exists(os.path.join(root, "NATIVE_OFF")):
+        return False, "NATIVE_OFF file present"
+    marker = os.path.join(root, ".native_trial")
+    if os.path.exists(marker):
+        try:
+            pid = int(open(marker).read().strip() or "0")
+        except Exception:
+            pid = 0
+        if pid != os.getpid() and not os.path.exists("/proc/%d" % pid):
+            strikes_f = os.path.join(root, ".native_strikes")
+            try:
+                strikes = int(open(strikes_f).read().strip() or "0") + 1
+            except Exception:
+                strikes = 1
+            try:
+                os.remove(marker)
+                with open(strikes_f, "w") as f:
+                    f.write(str(strikes))
+                if strikes >= 2:
+                    with open(os.path.join(root, "NATIVE_OFF"), "w") as f:
+                        f.write("Auto-disabled %s: the video engine died twice in a row while the native renderer was on "
+                                "trial.\nDelete this file to try the native renderer again.\n" % time.strftime("%Y-%m-%d %H:%M"))
+            except Exception:
+                pass
+            if strikes >= 2:
+                return False, "engine died twice during native trial - auto-disabled (see NATIVE_OFF)"
+            return False, "engine died during native trial (strike 1 of 2) - fallback for this session"
+    return True, ""
+
+
+def _arm_guard():
+    S["armed"] = True
+    root = S["root"]
+    try:
+        with open(os.path.join(root, ".native_trial"), "w") as f:
+            f.write(str(os.getpid()))
+    except Exception:
+        return
+
+    def later():                                   # still alive GUARD_SECONDS on: no crash in the first frames
+        time.sleep(GUARD_SECONDS)
+        _clear_guard(root)
+    threading.Thread(target=later, daemon=True).start()
+
+
+def _clear_guard(root):
+    for f in (".native_trial", ".native_strikes"):
+        try:
+            os.remove(os.path.join(root, f))
+        except Exception:
+            pass
+
+
+def _find_or_build(root, sources, prefix):
+    """The compiled kernel for this folder's sources: from this folder, /tmp, or another mode's folder (modes with the
+    same sources share one build), else built here. One gcc at a time on the device (a lock in /tmp): gcc at -O3 needs
+    ~100 MB and the EYESY has no swap, so every new mode compiling at once at the first boot could exhaust its memory.
+    Returns the .so path, or None (why is logged)."""
+    src_path = os.path.join(root, sources[0])
+    src = b"".join(open(os.path.join(root, s), "rb").read() for s in sources)
+    mach = platform.machine() or "unknown"
+    base = ["-O3", "-fno-math-errno", "-shared", "-fPIC", "-pthread"]
+    # the EYESY is a Cortex-A53 in 32-bit mode: without these, no hardware divide and no NEON
+    arch = (["-mcpu=cortex-a53", "-mfpu=neon-fp-armv8", "-mfloat-abi=hard", "-funsafe-math-optimizations"]
+            if mach.startswith("armv7") else [])
+    tag = hashlib.sha1(src + " ".join(base + arch).encode()).hexdigest()[:10]
+    name = "%s_%s_%s.so" % (prefix, tag, mach)
+    parent = os.path.dirname(os.path.normpath(root))
+
+    def look():
+        for d in [root, "/tmp"] + sorted(glob.glob(os.path.join(glob.escape(parent), "*", ""))):
+            p = os.path.join(d, name)
+            if os.path.isfile(p):
+                return p
+        return None
+
+    so = look()
+    if so is None:
+        lock = None
+        try:
+            import fcntl
+            lock = open("/tmp/eyesy-kernel-build.lock", "a")
+            fcntl.flock(lock, fcntl.LOCK_EX)
+        except Exception:
+            pass                                   # no fcntl (not Linux): build without the lock
+        try:
+            so = look()                            # built by another mode while this one waited
+            if so is None:
+                t0 = time.time()
+                for d in (root, "/tmp"):
+                    cand = os.path.join(d, name)
+                    tmp = cand + ".tmp%d" % os.getpid()
+                    for flags in (base + arch, base):
+                        try:
+                            r = subprocess.run(["gcc"] + flags + ["-o", tmp, src_path, "-lm"],
+                                               capture_output=True, text=True, timeout=300)
+                        except Exception as e:
+                            _log("gcc not usable (%s) - fallback renderer" % e)
+                            return None
+                        if r.returncode == 0:
+                            os.replace(tmp, cand)
+                            so = cand
+                            _log("compiled %s in %.1f s" % (name, time.time() - t0))
+                            break
+                        _log("gcc failed with %s: %s" % (" ".join(flags), r.stderr.strip()[-300:]))
+                    if so:
+                        break
+        finally:
+            if lock is not None:
+                lock.close()                       # closing releases the lock
+    if so is not None:
+        for d in (root, "/tmp"):                   # drop builds of older sources (a loaded one stays mapped)
+            try:
+                for f in os.listdir(d):
+                    if f.startswith(prefix + "_") and f.endswith(".so") and os.path.join(d, f) != so:
+                        os.remove(os.path.join(d, f))
+            except Exception:
+                pass
+    return so
+
+
+def _compile_and_load(root):
+    t0 = time.time()
+    try:
+        ok, why = _native_allowed(root)
+        if not ok:
+            _log("native renderer off: " + why)
+            S["native_state"] = "off: " + why
+            return
+        so = _find_or_build(root, [KERNEL + ".c", "glow.h"], KERNEL)
+        if so is None:
+            S["native_state"] = "off: no kernel (see the log)"
+            return
+        lib = ctypes.CDLL(so)
+        F = ctypes.POINTER(ctypes.c_float)
+        lib.fx_init.argtypes = [ctypes.c_int, ctypes.c_int]
+        lib.fx_frame.restype = ctypes.c_int
+        lib.fx_frame.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
+                                 ctypes.c_int, ctypes.c_int, F, ctypes.c_int, ctypes.c_int, F, ctypes.c_int, ctypes.c_int,
+                                 ctypes.c_void_p, ctypes.c_int, ctypes.c_float, ctypes.c_void_p, ctypes.c_int,
+                                 ctypes.c_void_p, ctypes.c_int, F]
+        lib.fx_stats.argtypes = [F, ctypes.c_int]
+        if lib.fx_version() != KERNEL_VERSION or lib.fx_param_count() != N_COMMON + len(_extras(None, None)):
+            S["native_state"] = "off: kernel version mismatch"
+            return
+        lib.fx_threads(int(_num(root, "THREADS", 2)))  # the final pass on two cores (THREADS 1: one, to compare)
+        asm = os.path.join(root, KERNEL + ".s")
+        if os.path.exists(os.path.join(root, "ASM")) and not os.path.exists(asm):   # dev: the device's code
+            mach = platform.machine() or ""
+            arch = (["-mcpu=cortex-a53", "-mfpu=neon-fp-armv8", "-mfloat-abi=hard", "-funsafe-math-optimizations"]
+                    if mach.startswith("armv7") else [])
+            subprocess.run(["gcc", "-O3", "-fno-math-errno", "-fPIC", "-pthread"] + arch +
+                           ["-S", "-o", asm, os.path.join(root, KERNEL + ".c")], capture_output=True, timeout=300)
+            _log("wrote %s.s" % KERNEL)
+        S["lib"] = lib                             # fx_init runs on the engine's thread, at the first draw
+        S["native_state"] = "on"
+        _log("native renderer ready: %s (%.1f s)" % (os.path.basename(so), time.time() - t0))
+    except Exception as e:
+        S["native_state"] = "off: %s" % e
+        _log("native load failed: %r" % (e,))
+
+
+# ---------------------------------------------------------------------------------------------- setup
+def setup(screen, eyesy):
+    S.clear()
+    root = eyesy.mode_root if getattr(eyesy, "mode_root", "") else os.path.dirname(os.path.abspath(__file__))
+    S["root"] = root
+    S["debug"] = _num(root, "DEBUG", 0) == 1
+    S["count"] = int(_num(root, "COUNT", COUNT))
+    S["down_file"] = _num(root, "DOWN", 0)
+    S["P"] = (ctypes.c_float * (N_COMMON + len(_extras(None, None))))()
+    S["zero"] = (ctypes.c_float * 2)()
+    S["wave"] = (ctypes.c_float * 100)()
+    S["bands"] = (ctypes.c_float * 32)()
+    S["last"] = time.time()
+    S["native_frames"] = 0
+    S["native_state"] = "compiling"
+    S["lvl"] = 0.0
+    S["t"] = 0.0
+    S["last_trig"] = -1.0
+    S["prof"] = [0.0, 0, 0.0, 0]                       # DEBUG: seconds, frames, the longest, frames over 14.5 ms
+    if os.path.exists(os.path.join(root, "BENCH")):
+        _bench_setup(_num(root, "BENCH", 1) >= 2)
+    threading.Thread(target=_compile_and_load, args=(root,), daemon=True).start()
+
+
+def _surfaces(screen):
+    """(Re)create the buffers for this draw surface (size / pixel format)."""
+    xr, yr = int(screen.get_width()), int(screen.get_height())
+    # the full size of the surface on stereopsis (it sets the surface's size: scale.json, the page); on the stock
+    # engine (always 1280x720) half that, for speed. DOWN (a file) overrides
+    down = int(S["down_file"]) if S["down_file"] >= 1 else (1 if yr <= 400 or STEREOPSIS else 2)
+    down = max(1, min(8, down))
+    key = (xr, yr, screen.get_bitsize(), screen.get_masks(), down)
+    if S.get("surf_key") == key:
+        return
+    w, h = (xr + down - 1) // down, (yr + down - 1) // down
+    bw, bh = (w + 3) // 4, (h + 3) // 4
+    sh = screen.get_shifts()
+    S.update(surf_key=key, xr=xr, yr=yr, w=w, h=h, bw=bw, bh=bh, down=down, shifts=(sh[0], sh[1], sh[2]))
+    S["acc"] = (ctypes.c_float * (w * h * 3))()
+    S["bloom"] = (ctypes.c_float * (bw * bh * 6))()
+    S["native_fmt_ok"] = (screen.get_bytesize() == 4 and hasattr(screen, "_pixels_address")
+                          and len({sh[0], sh[1], sh[2]}) == 3 and all(s in (0, 8, 16, 24) for s in sh[:3]))
+    if not S["native_fmt_ok"]:
+        _log("screen format not usable by the kernel (bytesize %d, shifts %s) - fallback" % (screen.get_bytesize(), sh))
+
+
+def _bench_setup(heavy):
+    """BENCH: 16 frames of a loud spectrum (bass-heavy, every band busy) and waveform, made once"""
+    gain = 1.25 if heavy else 1.0
+    ffts, waves = [], []
+    for j in range(16):
+        f = (ctypes.c_float * 1024)()
+        w = (ctypes.c_float * 1024)()
+        for k in range(1024):
+            base = 0.9 * math.exp(-k / 60.0) + 0.4 * math.exp(-k / 400.0) + 0.12
+            f[k] = min(1.0, gain * base * (0.75 + 0.25 * math.sin(j * 0.7 + k * 0.02)))
+            w[k] = 0.8 * math.sin(k * 0.049 + j * 0.9) * (0.6 + 0.4 * math.sin(k * 0.011 + j))
+        ffts.append(f)
+        waves.append(w)
+    S["bench"] = (ffts, waves, heavy)
+    S["bench_ph"] = 0.0
+    _log("BENCH %d: synthetic %s instead of the input" % (2 if heavy else 1, "club mix" if heavy else "loud music"))
+
+
+def _bench_audio():
+    ffts, waves, heavy = S["bench"]
+    t = S["t"]
+    ph = (t * 128.0 / 60.0) % 1.0
+    kick = ph < S["bench_ph"]
+    S["bench_ph"] = ph
+    env = math.exp(-ph * 6.0)
+    j = int(t * 30.0) % 16
+    b = S["bands"]
+    for i in range(32):
+        b[i] = min(1.0, (0.85 - i * 0.015) * (0.7 + 0.3 * math.sin(t * 3.0 + i * 0.4)) + (0.3 * env if i < 6 else 0.0))
+    if heavy:
+        lv, bs, tr = 0.75 + 0.15 * math.sin(t * 2.1), 0.75 + 0.25 * env, 0.5 + 0.2 * math.sin(t * 7.3)
+    else:
+        lv, bs, tr = 0.55 + 0.2 * math.sin(t * 2.1), 0.4 + 0.55 * env, 0.35 + 0.2 * math.sin(t * 7.3)
+    return (lv, bs, 0.45, tr, env, kick, ctypes.addressof(ffts[j]), 1024, 15.625, ctypes.addressof(waves[j]), 1024,
+            32000.0, ctypes.addressof(b), 32)
+
+
+def _audio(eyesy):
+    """(level, bass, mid, treble, beat envelope, kick this frame, fft address, bins, bin Hz, wave address, samples,
+    wave Hz, bands address, bands): stereopsis's analysis when it runs; on the stock engine, the level and the scope"""
+    if S.get("bench"):
+        return _bench_audio()
+    if getattr(eyesy, "audio_analysis", False):
+        fft, wave, b = eyesy.audio_fft, eyesy.audio_wave, S["bands"]
+        src = eyesy.audio_bands
+        for i in range(min(32, len(src))):
+            b[i] = src[i]
+        return (eyesy.audio_level, eyesy.audio_bass, eyesy.audio_mid, eyesy.audio_treble, eyesy.audio_beat,
+                bool(eyesy.beat), ctypes.addressof(fft), len(fft), float(eyesy.audio_fft_hz),
+                ctypes.addressof(wave), len(wave), 32000.0, ctypes.addressof(b), 32)
+    ain = eyesy.audio_in
+    peak = max(1, max(abs(int(v)) for v in ain)) / 32768.0
+    S["lvl"] += (min(1.0, peak * 1.5) - S["lvl"]) * (0.5 if peak > S["lvl"] else 0.1)
+    w = S["wave"]
+    for i, v in enumerate(ain[:100]):
+        w[i] = max(-1.0, min(1.0, v / 32768.0 * 2.0))
+    lv = S["lvl"]
+    return (lv, lv, lv * 0.6, lv * 0.3, 0.0, False, ctypes.addressof(S["zero"]), 0, 0.0,
+            ctypes.addressof(w), len(ain[:100]), 2000.0, ctypes.addressof(S["zero"]), 0)
+
+
+# ---------------------------------------------------------------------------------------------- the text
+def _text_file():
+    return os.path.join(S.get("root", ""), "TEXT")
+
+
+def _initial_text():
+    """the text the page set last (this folder's TEXT file), else TEXT above"""
+    try:
+        with open(_text_file(), encoding="utf-8") as f:
+            t = f.read().strip("\r\n")
+        if t.strip():
+            return t[:64]
+    except Exception:
+        pass
+    return TEXT
+
+
+def get_text():
+    """the text on screen (stereopsis's page shows it in its Text box)"""
+    if "text" not in S:
+        S["text"] = _initial_text()
+        S["text_dirty"] = True
+    return S["text"]
+
+
+def set_text(value):
+    """a new text (stereopsis's page): the drones fly to it at the next frame. It is kept in this folder's TEXT file,
+    so it is still there after a restart; setting it back to TEXT above (or deleting the file) goes back to TEXT.
+    Returns the text set, or None (nothing printable)."""
+    t = "".join(ch for ch in str(value) if ch.isprintable())[:64]
+    if not t.strip():
+        return None
+    S["text"] = t
+    S["text_dirty"] = True
+    try:
+        if t == TEXT:
+            if os.path.exists(_text_file()):
+                os.remove(_text_file())
+        else:
+            with open(_text_file(), "w", encoding="utf-8") as f:
+                f.write(t + "\n")
+    except Exception as e:
+        _log("could not keep the text in %s: %r" % (_text_file(), e))
+    return t
+
+
+def _font():
+    """FONT at 220 px (the sim's canvas size), loaded once; pygame's own font if FONT cannot be read"""
+    if S.get("font") is None:
+        pygame.font.init()
+        path = os.path.join(S.get("root", ""), FONT)
+        try:
+            S["font"] = pygame.font.Font(path, 220)
+        except Exception as e:
+            _log("font %s: %r - pygame's own font instead" % (FONT, e))
+            S["font"] = pygame.font.Font(None, 220)
+    return S["font"]
+
+
+def _render_text(text):
+    """the sim's canvas: the text white on transparent at 220 px, 60 px around it: (RGBA bytes, width, height)"""
+    glyphs = _font().render(text, True, (255, 255, 255))
+    w, h = glyphs.get_width() + 120, 220 + 120
+    canvas = pygame.Surface((w, h), pygame.SRCALPHA)
+    canvas.fill((0, 0, 0, 0))
+    canvas.blit(glyphs, ((w - glyphs.get_width()) // 2, (h - glyphs.get_height()) // 2))
+    tobytes = getattr(pygame.image, "tobytes", None) or pygame.image.tostring
+    return tobytes(canvas, "RGBA"), w, h
+
+
+def _send_text(lib, text):
+    """the kernel samples the text's outline into the drones' places (the sim's sampler) and they fly there"""
+    t0 = time.perf_counter()
+    data, w, h = _render_text(text)
+    buf = ctypes.create_string_buffer(data, len(data))
+    lib.tx_text.restype = ctypes.c_int
+    lib.tx_text.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int]
+    rc = lib.tx_text(ctypes.addressof(buf), w, h, w * 4)
+    _log("text %r: %s (%.0f ms)" % (text, ("%d drones" % rc) if rc > 0 else ("not drawn (%d)" % rc),
+                                    (time.perf_counter() - t0) * 1000))
+
+
+def _extras(eyesy, au):
+    """the kernel's parameters after the common ones (the settings above); a new text goes to the kernel here"""
+    if eyesy is not None:
+        get_text()
+        lib = S.get("lib")
+        if lib is not None and S.get("text_dirty"):
+            S["text_dirty"] = False
+            try:
+                _send_text(lib, S["text"])
+            except Exception as e:
+                _log("text %r: %r" % (S["text"], e))
+    return [SAFE_ZONE, SPEED, RIGIDITY, AVOIDANCE, DAMPING, SIZE_MIN, SIZE_MAX, WAVES_MAX, PULSE, PUSH_AWAY, PUSH_SHARE,
+            RIPPLES, BASS_SWELL, SHIMMER, HUE_DRIFT, INTENSITY, BRIGHTNESS, DOT, DOT_MIN, STARS]
+
+
+# ---------------------------------------------------------------------------------------------- draw
+def draw(screen, eyesy):
+    _surfaces(screen)
+    now = time.time()
+    gap = now - S["last"]
+    S["last"] = now
+    dt = getattr(eyesy, "dt", None)                    # stereopsis: whole display refreshes, no jitter
+    dt = min(0.1, max(0.0, gap if dt is None else dt))
+    S["t"] += dt
+    fg = eyesy.color_picker_lfo(eyesy.knob4)
+    bg = eyesy.color_picker_bg(eyesy.knob5)
+    # pygame's fill() truncates float colours; the kernel gets the same integers, so its background pixels are
+    # identical to the engine's fill (which then lets it skip the dark tiles: prefilled)
+    bgi = tuple(int(c) for c in bg[:3])
+    prefilled = 1.0 if (getattr(eyesy, "auto_clear", False) and S.get("last_bg") == bgi) else 0.0
+    S["last_bg"] = bgi
+    au = _audio(eyesy)
+    level, bass, mid, treble, beat, kick, fft, nfft, fft_hz, wave, nwave, wave_hz, bands, nbands = au
+    # the performer's Trigger (button, page, MIDI), not stock's loudness trigger: stereopsis 0.9.1 marks that one
+    # eyesy.trig_audio (a hot input fires it nearly every frame); at most every 0.25 s
+    trig = bool(eyesy.trig) and not getattr(eyesy, "trig_audio", False) and S["t"] - S["last_trig"] > 0.25
+    if trig:
+        S["last_trig"] = S["t"]
+
+    lib = S.get("lib")
+    if lib is not None and S["native_fmt_ok"]:
+        if not S.get("armed"):                         # crash guard: armed by the first native frame (before the
+            _arm_guard()                               # set-up below: a crash there is one on trial too)
+        if not lib.fx_ready():                         # set up on the engine's thread, the first time it draws
+            t_init = time.perf_counter()
+            lib.fx_init(S["count"], 7)
+            _log("set up in %.0f ms" % ((time.perf_counter() - t_init) * 1000))
+        if os.path.exists(os.path.join(S["root"], "KBENCH")) and not S.get("kbench_done"):
+            S["kbench_done"] = True
+            _kbench(lib)
+        if gap > 0.3:                                  # shown again after a pause: no trails from back then
+            lib.fx_trails_reset()
+        P = S["P"]
+        vals = [dt, eyesy.knob1, eyesy.knob2, eyesy.knob3, eyesy.knob4, eyesy.knob5,
+                fg[0] / 255.0, fg[1] / 255.0, fg[2] / 255.0, bgi[0] / 255.0, bgi[1] / 255.0, bgi[2] / 255.0,
+                level, bass, mid, treble, beat, 1.0 if kick else 0.0, 1.0 if trig else 0.0, prefilled, wave_hz]
+        vals += _extras(eyesy, au)
+        for i, v in enumerate(vals):
+            P[i] = v
+        sh = S["shifts"]
+        t0 = time.perf_counter()
+        screen.lock()
+        try:
+            rc = lib.fx_frame(screen._pixels_address, S["xr"], S["yr"], screen.get_pitch(), S["down"], sh[0], sh[1],
+                              sh[2], S["acc"], S["w"], S["h"], S["bloom"], S["bw"], S["bh"], fft, nfft, fft_hz,
+                              wave, nwave, bands, nbands, P)
+        finally:
+            screen.unlock()
+        if rc == 0:
+            S["native_frames"] += 1
+            if S["native_frames"] == KNOWN_GOOD_FRAMES:
+                _clear_guard(S["root"])                                # proven: clear guard + strikes
+            if S["debug"]:
+                pr = S["prof"]
+                el = time.perf_counter() - t0
+                pr[0] += el
+                pr[1] += 1
+                pr[2] = max(pr[2], el)
+                pr[3] += el > 0.0145
+                if pr[1] == 120:
+                    d = (ctypes.c_float * 11)()
+                    lib.fx_stats(d, 11)
+                    _log("kernel %.2f ms/frame (max %.2f, %d over 14.5), %dx%d (down %d) | bin %.2f bloom %.2f final "
+                         "%.2f | tiles lit %.0f bloom %.0f dark %.0f | prims %.0f dropped %.0f | %.3f %.3f %.3f"
+                         % (pr[0] / pr[1] * 1000, pr[2] * 1000, pr[3], S["w"], S["h"], S["down"],
+                            d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8], d[9], d[10]))
+                    pr[:] = [0.0, 0, 0.0, 0]
+            return
+        _log("fx_frame rejected its arguments (rc %d) - using the fallback" % rc)
+        S["lib"] = None
+    screen.fill(bgi)
+    _fallback(screen, eyesy, fg, level, bass)
+
+
+def _kbench(lib):
+    """KBENCH: the renderer's inner loops on this machine, ns per pixel"""
+    lib.fx_bench.restype = ctypes.c_float
+    lib.fx_bench.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_float]
+    out = []
+    for r in (2.0, 3.0, 4.0, 6.0):
+        out.append("sprite r%.0f rgb %.1f rgbx %.1f" % (r, lib.fx_bench(0, 20000, r), lib.fx_bench(1, 20000, r)))
+    out.append("tone %.1f" % lib.fx_bench(2, 400, 1.0))
+    for r in (1.5, 3.0):
+        out.append("line r%.1f %.1f" % (r, lib.fx_bench(3, 20000, r)))
+    _log("KBENCH ns/px: " + " | ".join(out))
+
+
+# ---------------------------------------------------------------------------------------------- fallback
+def _fallback(screen, eyesy, fg, level, bass):
+    """the text in plain letters across the screen: while the kernel compiles, or without gcc"""
+    xr, yr = screen.get_width(), screen.get_height()
+    key = (get_text(), xr, yr, tuple(int(c) for c in fg[:3]))
+    if S.get("fb_key") != key:
+        S["fb_key"] = key
+        S["fb"] = None
+        try:
+            surf = _font().render(key[0], True, key[3])
+            w = max(1, int(xr * 0.9))
+            h = max(1, int(surf.get_height() * w / max(1, surf.get_width())))
+            S["fb"] = pygame.transform.smoothscale(surf, (w, min(h, yr)))
+        except Exception as e:
+            _log("fallback text: %r" % (e,))
+    s = S.get("fb")
+    if s is not None:
+        screen.blit(s, ((xr - s.get_width()) // 2, (yr - s.get_height()) // 2))

@@ -39,7 +39,7 @@ BACKUP_DIR = SD + "/stereopsis/backup/Modes"
 MANIFEST = SD + "/stereopsis/INSTALLED.json"
 SCALE = SD + "/stereopsis/scale.json"
 LAB = "Z - Engine Lab"
-BINARY = (".ttf",)
+BINARY = (".ttf", ".otf")
 # render sizes for a first install (the page's Size row changes them; they are kept on an update): the heavier modes
 # at half size, where they run at 60 frames a second
 DEFAULT_SCALE = {"default": "full", "modes": {
@@ -277,7 +277,7 @@ def plan_install(ey, info):
                     break
         for f, data in sorted(ours[mode].items()):
             if mode not in info["modes"] or ey.read(folder + "/" + f) != data:
-                steps.append(("save", folder + "/" + f, data, None))
+                steps.append(("upload" if f.endswith(BINARY) else "save", folder + "/" + f, data, None))   # (a font)
     notes.append("our modes   %d folders (%d new, %d changed): %s .. %s, and %s (it starts stereopsis)"
                  % (len(ours), n_new, n_changed, sorted(ours)[0], sorted(m for m in ours if m != LAB)[-1], LAB))
     switch = SD + "/Modes/%s/STEREOPSIS" % LAB
