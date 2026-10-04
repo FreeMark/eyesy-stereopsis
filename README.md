@@ -156,6 +156,10 @@ them with `getattr(eyesy, name, default)` and a mode still runs on the stock eng
 | `modes/` | the fourteen modes and the Engine Lab | MIT (`LICENSE`), except the font in `14 - Swarm - Text`: Indie Flower, SIL Open Font License 1.1 (its `OFL.txt` beside it) |
 | `install.py`, `docs/` | the installer and the engine notes | MIT (`LICENSE`) |
 
+The MIT licence in `LICENSE` covers the files written for this project: `modes/` (except the font in
+`14 - Swarm - Text`), `install.py` and `docs/`. `engine/` is a fork of Critter & Guitari's EYESY_OS and stays under its
+BSD 3-Clause licence; `factory-modes/` holds Critter & Guitari's modes under their BSD 2-Clause licence.
+
 The engine's font is Nunito (SIL Open Font License 1.1), as it ships with EYESY_OS. The swarm modes bring the drone
 swarm visualizer and simulator from free.vet to the EYESY; 14 - Swarm - Text writes in Indie Flower by Kimberly
 Geswein (SIL Open Font License 1.1).
