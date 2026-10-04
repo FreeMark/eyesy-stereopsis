@@ -46,6 +46,14 @@ for `/state.json` `"text"`, which is null for any other mode). Scripts: `{"act":
 "mode": "<its name>"}` or `{"act": "text", "reset": true}` on `/control`. 14 - Swarm - Text keeps the text in
 its folder's `TEXT` file, so it survives a restart.
 
+A second line (stereopsis 0.11): give the module `get_text2()` too (its second line, `""` while it shows one) and
+`set_text2(text)` (`""` = one line again). The page then shows a Line 2 switch under the Text box: on shows a
+second box (with the line it had before, sent at once, or empty to type in and Set), Set sends both lines, off goes
+back to one line at once; Reset also calls `set_text2` with the module's `TEXT2`. `/state.json` has `"text2"` (null
+for a mode without a second line); scripts: `{"act": "text", "value2": "..."}`, with or without `"value"`.
+14 - Swarm - Text gives the second line drones of its own and keeps it in its `TEXT2` file (an empty one = one
+line).
+
 ## For mode authors: the audio analysis
 
 `engine/audio.c` runs in the engine's audio process on every block the sound card delivers (32 kHz; stock keeps 1

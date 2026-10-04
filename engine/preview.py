@@ -2,9 +2,9 @@
 computer on the same network: the live picture (MJPEG) with the mode and frame rate on top, and under it
 (beside it on a wide screen) the EYESY's controls: the five knobs, mode, scene, palettes, OSD, Persist,
 Trigger, screen grab and audio gain, the size the mode on screen draws at (0.9: the display's, half, a quarter; saved
-per mode), the text of a mode that writes one (0.10: a mode with get_text() / set_text()) - and a button that switches
-to the stock engine on the same mode (while the stock engine runs, the Engine Lab answers on this address with a small
-page that switches back).
+per mode), the text of a mode that writes one (0.10: a mode with get_text() / set_text(); 0.11: and a second line under
+it, get_text2() / set_text2(), behind the Line 2 switch) - and a button that switches to the stock engine on the same
+mode (while the stock engine runs, the Engine Lab answers on this address with a small page that switches back).
 
 The frames come from the compositor (kms.c): downscaled and JPEG-encoded on spare CPU cores, only while
 someone is watching, so an unwatched preview costs nothing. This file only serves them. It runs as a daemon
@@ -20,7 +20,8 @@ MIDI CC holds one (stock eyesy.cc_override_knob) until that knob on the EYESY is
   /frame.jpg    one current frame
   /state.json   mode, fps, knobs (and which are held), render size (and the display's), OSD / persist, scene,
                 palettes, gain, audio (stock peaks + the engine's analysis: levels, 32 bands, beats, tempo), the
-                frame scheduler's tier, perf totals, the mode's text (null for a mode that writes none)
+                frame scheduler's tier, perf totals, the mode's text (null for a mode that writes none) and its
+                second line (text2: "" while it shows one line; null for a mode without a second line)
   /modes.json   the installed modes, in the EYESY's order
   /control      POST, JSON: one action or a list of up to 32 (see parse_action)
 Like the EYESY's web editor, it has no password: keep the EYESY on a network you trust. /control only takes
@@ -70,6 +71,8 @@ body.view #tog { display: none; }
 body.bare #panel, body.view #panel { display: none; }
 #panel.off { opacity: .45; pointer-events: none; }
 .row { display: flex; gap: 8px; align-items: center; min-width: 0; }
+[hidden] { display: none !important; }
+#textrow { display: grid; gap: 8px; }
 button, select { font: inherit; color: var(--text); background: var(--ctl); border: 1px solid var(--line);
   border-radius: 8px; min-height: 44px; padding: 0 12px; touch-action: manipulation; }
 button { cursor: pointer; }
@@ -95,8 +98,8 @@ input[type=range] { display: block; width: 100%; height: 40px; margin: 0; backgr
 .lbl { color: var(--dim); font-size: 12px; width: 44px; flex: 0 0 auto; }
 .val { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   text-align: center; }
-#release, #swap, #textset, #textreset { flex: 0 0 auto; }
-#text { flex: 1 1 auto; min-width: 0; font: inherit; color: var(--text); background: var(--ctl);
+#release, #swap, #textset, #textreset, #line2 { flex: 0 0 auto; }
+#text, #text2 { flex: 1 1 auto; min-width: 0; font: inherit; color: var(--text); background: var(--ctl);
   border: 1px solid var(--line); border-radius: 8px; min-height: 44px; padding: 0 10px; }
 .size { flex: 1 1 0; min-width: 0; padding: 0 6px; font-variant-numeric: tabular-nums; }
 #swap.armed { border-color: var(--held); color: var(--held); }
@@ -149,11 +152,16 @@ input[type=range] { display: block; width: 100%; height: 40px; margin: 0; backgr
     <button class="size" data-size="full" aria-pressed="false">full</button>
     <button class="size" data-size="half" aria-pressed="false">half</button>
     <button class="size" data-size="quarter" aria-pressed="false">quarter</button></div>
-  <form class="row" id="textrow" hidden title="what this mode writes - kept for this mode"><span class="lbl">Text</span>
-    <input id="text" type="text" maxlength="64" autocomplete="off" spellcheck="false" enterkeyhint="done"
-      aria-label="the text this mode writes">
-    <button id="textset" type="submit">Set</button>
-    <button id="textreset" type="button" title="back to the text in the mode's file">Reset</button></form>
+  <form id="textrow" hidden title="what this mode writes - kept for this mode">
+    <div class="row"><span class="lbl">Text</span>
+      <input id="text" type="text" maxlength="64" autocomplete="off" spellcheck="false" enterkeyhint="done"
+        aria-label="the text this mode writes">
+      <button id="textset" type="submit">Set</button>
+      <button id="textreset" type="button" title="back to the text (and second line) in the mode's file">Reset</button></div>
+    <div class="row" id="line2row" hidden><span class="lbl"></span>
+      <button id="line2" type="button" aria-pressed="false" title="a second line under the first, with drones of its own">Line 2</button>
+      <input id="text2" type="text" maxlength="64" autocomplete="off" spellcheck="false" enterkeyhint="done" hidden
+        placeholder="the second line, then Set" aria-label="the second line"></div></form>
   <div id="gainrow"></div>
   <div id="meter" title="the engine's audio analysis: 32 bands from 50 Hz to 16 kHz, beats, tempo"><b>Audio</b>
     <canvas id="spec" aria-label="audio spectrum"></canvas><span id="bpm">&ndash;</span></div>
@@ -242,15 +250,32 @@ sel.addEventListener("change", () => { busy.mode = performance.now(); act({ act:
 $("release").addEventListener("click", () => act({ act: "release" }));
 const SIZES = { full: 1, half: 2, quarter: 4 };
 document.querySelectorAll(".size").forEach((b) => b.addEventListener("click", () => act({ act: "render", size: b.dataset.size })));
-// the Text row (0.10): a mode that writes a text; the box is left alone while you type in it
-const textrow = $("textrow"), textin = $("text");
-let curMode = "", shownText = null;
+// the Text row (0.10): a mode that writes a text; the box is left alone while you type in it. Its second line (0.11):
+// the Line 2 switch turns it on (the line it had before, or an empty box to type in and Set) and off, at once
+const textrow = $("textrow"), textin = $("text"), line2row = $("line2row"), line2 = $("line2"), textin2 = $("text2");
+let curMode = "", textMode = null, shownText = null, shownText2 = null, line2On = false;
+function showLine2(on) { line2On = on; line2.setAttribute("aria-pressed", String(on)); textin2.hidden = !on; }
+function keep2(mode, t) { try { if (t) localStorage.setItem("stereopsis.text2:" + mode, t); } catch (e) {} }
+function kept2(mode) { try { return localStorage.getItem("stereopsis.text2:" + mode) || ""; } catch (e) { return ""; } }
 textrow.addEventListener("submit", (e) => {
   e.preventDefault();
   if (!textin.value.trim()) return;
   busy.text = performance.now();
-  act({ act: "text", value: textin.value, mode: curMode });
+  const a = { act: "text", value: textin.value, mode: curMode };
+  if (!line2row.hidden) {
+    if (line2On && !textin2.value.trim()) showLine2(false);
+    a.value2 = line2On ? textin2.value : "";
+  }
+  act(a);
   textin.blur();
+  textin2.blur();
+});
+line2.addEventListener("click", () => {
+  busy.text = performance.now();
+  if (line2On) { showLine2(false); act({ act: "text", value2: "", mode: curMode }); return; }
+  showLine2(true);
+  if (textin2.value.trim()) act({ act: "text", value2: textin2.value, mode: curMode });
+  else textin2.focus();
 });
 $("textreset").addEventListener("click", () => { busy.text = performance.now(); act({ act: "text", reset: true, mode: curMode }); });
 
@@ -367,10 +392,23 @@ function render(s) {
   $("release").disabled = !s.held.some(Boolean);
   $("swaprow").hidden = !s.swap;
   $("sizerow").hidden = !s.display;              // the display's size, half, a quarter: which one this mode draws at
+  if (s.mode !== textMode) { textMode = s.mode; shownText = shownText2 = null; textin2.value = ""; }
   textrow.hidden = typeof s.text !== "string";
   if (typeof s.text === "string" && s.text !== shownText && document.activeElement !== textin && fresh("text")) {
     textin.value = s.text;
     shownText = s.text;
+  }
+  line2row.hidden = typeof s.text2 !== "string";
+  if (typeof s.text2 === "string" && s.text2 !== shownText2 && fresh("text")) {
+    shownText2 = s.text2;
+    if (s.text2) {
+      keep2(s.mode, s.text2);
+      if (document.activeElement !== textin2) textin2.value = s.text2;
+      showLine2(true);
+    } else {
+      if (!textin2.value) textin2.value = kept2(s.mode);
+      if (document.activeElement !== textin2) showLine2(false);
+    }
   }
   if (s.display) document.querySelectorAll(".size").forEach((b) => {
     const w = Math.floor(s.display[0] / SIZES[b.dataset.size]), h = Math.floor(s.display[1] / SIZES[b.dataset.size]);
@@ -442,6 +480,7 @@ class Preview(object):
         self.sched = None                            # main.py's frame Scheduler (0.8.1: its tier in /state.json)
         self.render_request = None                   # the page's Size buttons: "full" / "half" / "quarter" (0.9)
         self.mode_text = None                        # the text of the mode on screen, if it writes one (0.10)
+        self.mode_text2 = None                       # ... its second line ("" = one line), if it can have one (0.11)
         self.queue = collections.deque(maxlen=256)   # checked actions from the page, applied by apply()
         self.server = None
         self.viewers = 0
@@ -484,7 +523,7 @@ class Preview(object):
                 "scene_count": len(ey.scenes), "fg": self._palette_name(ey.fg_palette),
                 "bg": self._palette_name(ey.bg_palette), "gain": float(ey.config.get("audio_gain", 0.0)),
                 "controls": bool(self.controls), "viewers": self.viewers, "sched": self._sched(),
-                "text": self.mode_text,
+                "text": self.mode_text, "text2": self.mode_text2,
                 "audio": [float(ey.audio_peak), float(ey.audio_peak_r)],
                 "an": {"on": bool(getattr(ey, "audio_analysis", False)), "level": float(getattr(ey, "audio_level", 0)),
                        "bass": float(getattr(ey, "audio_bass", 0)), "mid": float(getattr(ey, "audio_mid", 0)),
@@ -517,8 +556,10 @@ class Preview(object):
           {"act": "render", "size": "full"|"half"|"quarter"}   the mode on screen draws at the display's size, half
                                                     or a quarter of it, saved in scale.json (main.py set_render_size)
           {"act": "text", "value": "...", "mode": "..."}   the text of a mode that writes one (its set_text: up to 64
-                                                    printable characters); "reset": true = the text in its file
-                                                    (its TEXT); with "mode", only if that mode is on screen
+                                                    printable characters); "value2": its second line (set_text2;
+                                                    "" = one line), with "value" or alone; "reset": true = the
+                                                    texts in its file (its TEXT, TEXT2); with "mode", only if that
+                                                    mode is on screen
         """
         if not isinstance(a, dict):
             raise ValueError("an action is a JSON object")
@@ -561,14 +602,24 @@ class Preview(object):
             if mode is not None and not isinstance(mode, str):
                 raise ValueError("mode must be a mode's name")
             if a.get("reset") is True:
-                return ("text", None, mode)
-            t = a.get("value")
-            if not isinstance(t, str):
-                raise ValueError("value must be text")
-            t = "".join(ch for ch in t if ch.isprintable())[:64]
-            if not t.strip():
-                raise ValueError("the text is empty")
-            return ("text", t, mode)
+                return ("text", mode, True, None, None)
+            if "value" not in a and "value2" not in a:
+                raise ValueError("send value (the text), value2 (its second line) or reset")
+            t = t2 = None
+            if "value" in a:
+                t = a["value"]
+                if not isinstance(t, str):
+                    raise ValueError("value must be text")
+                t = "".join(ch for ch in t if ch.isprintable())[:64]
+                if not t.strip():
+                    raise ValueError("the text is empty")
+            if "value2" in a:
+                t2 = a["value2"]
+                if not isinstance(t2, str):
+                    raise ValueError("value2 must be text (\"\" = one line)")
+                t2 = "".join(ch for ch in t2 if ch.isprintable())[:64]
+                t2 = t2 if t2.strip() else ""
+            return ("text", mode, False, t, t2)
         raise ValueError("unknown act")
 
     def control(self, headers, body):
@@ -648,25 +699,36 @@ class Preview(object):
                     self.render_request = c[1]         # the main loop sets it right after this (set_render_size)
                 elif k == "text":
                     m = sys.modules.get(ey.mode)
-                    setter = getattr(m, "set_text", None)
-                    if callable(setter) and (c[2] is None or c[2] == ey.mode):
-                        got = setter(c[1] if c[1] is not None else str(getattr(m, "TEXT", "")))
-                        print("[stereopsis] %s: text %r from the page" % (ey.mode, got), flush=True)
+                    setter, setter2 = getattr(m, "set_text", None), getattr(m, "set_text2", None)
+                    if callable(setter) and (c[1] is None or c[1] == ey.mode):
+                        two = callable(setter2) and callable(getattr(m, "get_text2", None))
+                        if c[2]:                                   # reset: the texts in the mode's file
+                            got = setter(str(getattr(m, "TEXT", "")))
+                            got2 = setter2(str(getattr(m, "TEXT2", ""))) if two else None
+                        else:
+                            got = setter(c[3]) if c[3] is not None else None
+                            got2 = setter2(c[4]) if c[4] is not None and two else None
+                        print("[stereopsis] %s: text %r, second line %r from the page" % (ey.mode, got, got2), flush=True)
             except Exception as e:
                 print("[stereopsis] preview control %r failed: %r" % (c, e), flush=True)
-        self.mode_text = self._mode_text()
+        self.mode_text, self.mode_text2 = self._mode_text()
 
     def _mode_text(self):
-        """the text of the mode on screen, if it writes one: module-level get_text() and set_text() (0.10)"""
+        """the text of the mode on screen, if it writes one (module-level get_text() and set_text(), 0.10), and its
+        second line if it can have one (get_text2() and set_text2(), 0.11; "" = one line): (text, text2), None each"""
         m = sys.modules.get(self.eyesy.mode)
-        get, put = getattr(m, "get_text", None), getattr(m, "set_text", None)
-        if not (callable(get) and callable(put)):
-            return None
-        try:
-            t = get()
-            return t if isinstance(t, str) else None
-        except Exception:
-            return None
+
+        def read(get_name, set_name):
+            get, put = getattr(m, get_name, None), getattr(m, set_name, None)
+            if not (callable(get) and callable(put)):
+                return None
+            try:
+                t = get()
+                return t if isinstance(t, str) else None
+            except Exception:
+                return None
+        t = read("get_text", "set_text")
+        return t, (read("get_text2", "set_text2") if t is not None else None)
 
     def next_jpeg(self, buf, seq, wait_s=0.25):
         """the next JPEG newer than seq, or None after wait_s"""

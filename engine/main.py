@@ -40,6 +40,8 @@
 #     Trigger (button, MIDI, the page) from the loudness trigger
 #   * the page's Text row (0.10): a mode with module-level get_text() and set_text(text) (14 - Swarm - Text) has its
 #     text shown and changed from the page (preview.py; set_text runs on this thread, once per frame)
+#   * a second line (0.11): a text mode that also has get_text2() and set_text2(text) ("" = one line) gets the page's
+#     Line 2 switch and box (preview.py); the page also hides its hidden rows again (a CSS rule had kept them showing)
 import os
 os.environ["SDL_VIDEODRIVER"] = "dummy"     # FORK: SDL never touches the screen (display.py does)
 os.environ["SDL_AUDIODRIVER"] = "dummy"     # FORK: pygame.init() must not open ALSA playback
@@ -77,7 +79,7 @@ from screen_flash_drive import ScreenFlashDrive
 
 FORK_DIR = os.environ.get("STEREOPSIS_DIR", "/sdcard/stereopsis")    # FORK: switches + crash marker live here
 TRIAL_FRAMES = 300
-STEREOPSIS_VERSION = "0.10"
+STEREOPSIS_VERSION = "0.11"
 
 
 def fork_flag(name, default=None):

@@ -9,29 +9,27 @@ import subprocess
 import threading
 import pygame
 
-# 14 - Swarm - Text
+# 15 - Swarm - Flower of Life
 #
-# free.vet's swarm sim writing a word in drones: FREE.VET unless you change it - TEXT below, or the Text box on
-# stereopsis's page. 2400 drones trace the word's outline in Indie Flower with the sim's neighbor physics: each one
-# springs to its place on the outline and pushes off any neighbour inside its safe zone, so a size too small to hold
-# them all becomes a living blob of drones fighting for room. The sim's audio rack moves them: the music pulses the
-# lights, the bass sends waves through the safe zones and every kick a ripple (the swarm adapts around them), the
-# bass swells the whole space, the treble makes the lights shimmer and the mids drift the colours. The text faces you
-# and fills the width of the screen. A second line (TEXT2 below, or the page's Line 2 switch) has drones of its own:
-# it pours out of the first line, which moves up to make room, and fades away when switched off. (The sim:
-# sim.free.vet; its settings are the ones below.)
+# free.vet's swarm sim forming its Flower of Life - 19 overlapping circles in the hex arrangement - in 2400
+# drones, with the sim's neighbor physics and audio rack set as for 14 - Swarm - Text (whose kernel this runs:
+# flowerswarm.c is a copy of its textswarm.c). Each drone springs to its place on a circle and pushes off any
+# neighbour inside its safe zone, so where the circles cross, and at a small size, the drones fight for room. The
+# music pulses the lights, the bass sends waves through the safe zones and every kick a ripple (the swarm adapts
+# around them), the bass swells the whole flower, the treble makes it shimmer and the mids drift its colours. The
+# flower faces you, fitted to the screen (the sim's Constrain view). (The sim: sim.free.vet.)
 #
-#Knob1 - size: 0.5x (a blob of drones fighting for room) .. 3x (the text, every drone in its place)
+#Knob1 - size: 0.5x (a crowd of drones fighting for room) .. 3x (every circle traced in dots)
 #Knob2 - waves: the bass's waves through the swarm, none on the left .. 3x on the right
 #Knob3 - glow: bloom up to the middle; trails from 60 % up
-#Knob4 - colour: the rainbow across the text, turned around the colour wheel (the music's hue drift turns it too)
+#Knob4 - colour: the flower's colours (each circle its own hue) turned around the colour wheel (the hue drift too)
 #Knob5 - background color
-#Trigger - a ripple out of the middle of the text
+#Trigger - a ripple out of the middle of the flower
 #
 # Best on stereopsis (its engine analyses the audio: spectrum, bands, waveform, kicks). On the stock engine it still
 # runs, on the level and the scope samples.
-# The renderer is a C kernel (textswarm.c + glow.h, next to this file) compiled ON the EYESY the first time the mode
-# runs (~30 s, in the background, one build at a time; a simple preview shows meanwhile). Files: textswarm_*.so =
+# The renderer is a C kernel (flowerswarm.c + glow.h, next to this file) compiled ON the EYESY the first time the mode
+# runs (~30 s, in the background, one build at a time; a simple preview shows meanwhile). Files: flowerswarm_*.so =
 # compiled cache (safe to delete); .native_trial / .native_strikes = crash guard; NATIVE_OFF (exists = never use the
 # kernel; the crash guard writes it if the engine dies twice in a row while the kernel is on trial).
 # Dev switches (files containing a number): DEBUG (1 = timings to the log), THREADS (2 = the final pass on two cores,
@@ -41,7 +39,7 @@ import pygame
 # at 1/DOWN of the surface's size; default: the full size on stereopsis, half above 400 lines on the stock engine).
 # Written by tools/make_glow_modes.py from the template all glow.h modes share (edit that, not this file).
 
-KERNEL = "textswarm"
+KERNEL = "flowerswarm"
 KERNEL_VERSION = 2
 N_COMMON = 21                  # dt, knobs 1-5, fg rgb, bg rgb, level, bass, mid, treble, beat, kick, trig, prefilled, wave Hz
 COUNT = 2400
@@ -50,13 +48,8 @@ GUARD_SECONDS = 3.0
 STEREOPSIS = os.environ.get("STEREOPSIS") == "1"     # the engine this runs on (stereopsis sets it)
 
 # ---- the settings: change them here ---------------------------------------------------------------------------------
-TEXT = "FREE.VET"              # what the drones write (stereopsis's page can change it live: see get_text)
-TEXT2 = ""                     # a second line under it, with drones of its own ("" = one line; the page's Line 2)
-LINE_SPACING = 1.15            # how far under the first line the second sits: middle to middle, in font sizes
-COUNT2 = 0                     # the second line's drones: 0 = as many as keep its dots as close as the first line's
-FONT = "IndieFlower-Regular.ttf"   # a .ttf / .otf in this folder (Indie Flower: SIL Open Font License, OFL.txt)
-# how many drones the first line has: COUNT, above (or a COUNT file in this folder)
-# free.vet's swarm sim as Free set it (its Swarm and Audio panels); 1 light unit (lu) ~ 0.1 m
+# how many drones: COUNT, above (or a COUNT file in this folder)
+# free.vet's swarm sim as Free set it for the text (its Swarm and Audio panels); 1 light unit (lu) ~ 0.1 m
 SAFE_ZONE = 1.0                # lu: drones push off any neighbour inside it
 SPEED = 25.0                   # lu/s
 RIGIDITY = 6.0                 # how hard a drone springs to its place
@@ -81,7 +74,7 @@ S = {}                 # all state lives here (the module is re-imported on relo
 
 
 def _log(msg):
-    print("[textswarm] " + msg)
+    print("[flowerswarm] " + msg)
 
 
 def _num(root, name, default):
@@ -367,161 +360,22 @@ def _audio(eyesy):
             ctypes.addressof(w), len(ain[:100]), 2000.0, ctypes.addressof(S["zero"]), 0)
 
 
-# ---------------------------------------------------------------------------------------------- the text
-def _file(name):
-    return os.path.join(S.get("root", ""), name)
-
-
-def _clean(value):
-    """printable characters only, at most 64"""
-    return "".join(ch for ch in str(value) if ch.isprintable())[:64]
-
-
-def _initial_text():
-    """the text the page set last (this folder's TEXT file), else TEXT above"""
-    try:
-        with open(_file("TEXT"), encoding="utf-8") as f:
-            t = f.read().strip("\r\n")
-        if t.strip():
-            return t[:64]
-    except Exception:
-        pass
-    return TEXT
-
-
-def _text2_default():
-    t = _clean(TEXT2)
-    return t if t.strip() else ""
-
-
-def _initial_text2():
-    """the second line the page set last (this folder's TEXT2 file; an empty one = one line), else TEXT2 above"""
-    try:
-        with open(_file("TEXT2"), encoding="utf-8") as f:
-            t = f.read().strip("\r\n")[:64]
-        return t if t.strip() else ""
-    except Exception:
-        pass
-    return _text2_default()
-
-
-def get_text():
-    """the text on screen (stereopsis's page shows it in its Text box)"""
-    if "text" not in S:
-        S["text"] = _initial_text()
-        S["text_dirty"] = True
-    return S["text"]
-
-
-def get_text2():
-    """the second line on screen, "" while there is one line (stereopsis's page: its Line 2 switch and box)"""
-    if "text2" not in S:
-        S["text2"] = _initial_text2()
-        S["text2_dirty"] = True
-    return S["text2"]
-
-
-def _keep(name, t, default):
-    """a text from the page, kept in this folder's file `name` (no file while it is the setting above)"""
-    try:
-        if t == default:
-            if os.path.exists(_file(name)):
-                os.remove(_file(name))
-        else:
-            with open(_file(name), "w", encoding="utf-8") as f:
-                f.write(t + "\n")
-    except Exception as e:
-        _log("could not keep the text in %s: %r" % (_file(name), e))
-
-
-def set_text(value):
-    """a new text (stereopsis's page): the drones fly to it at the next frame. It is kept in this folder's TEXT file,
-    so it is still there after a restart; setting it back to TEXT above (or deleting the file) goes back to TEXT.
-    Returns the text set, or None (nothing printable)."""
-    t = _clean(value)
-    if not t.strip():
-        return None
-    S["text"] = t
-    S["text_dirty"] = True
-    _keep("TEXT", t, TEXT)
-    return t
-
-
-def set_text2(value):
-    """a second line (stereopsis's page), or "" for one line again: at the next frame its drones pour out of the
-    first line (or fade away). Kept in this folder's TEXT2 file (an empty one = one line), so it is still there after
-    a restart; setting it back to TEXT2 above (or deleting the file) goes back to TEXT2. Returns the line set."""
-    t = _clean(value)
-    t = t if t.strip() else ""
-    S["text2"] = t
-    S["text2_dirty"] = True
-    _keep("TEXT2", t, _text2_default())
-    return t
-
-
-def _font():
-    """FONT at 220 px (the sim's canvas size), loaded once; pygame's own font if FONT cannot be read"""
-    if S.get("font") is None:
-        pygame.font.init()
-        path = os.path.join(S.get("root", ""), FONT)
-        try:
-            S["font"] = pygame.font.Font(path, 220)
-        except Exception as e:
-            _log("font %s: %r - pygame's own font instead" % (FONT, e))
-            S["font"] = pygame.font.Font(None, 220)
-    return S["font"]
-
-
-def _render_text(text):
-    """the sim's canvas: the text white on transparent at 220 px, 60 px around it: (RGBA bytes, width, height)"""
-    glyphs = _font().render(text, True, (255, 255, 255))
-    w, h = glyphs.get_width() + 120, 220 + 120
-    canvas = pygame.Surface((w, h), pygame.SRCALPHA)
-    canvas.fill((0, 0, 0, 0))
-    canvas.blit(glyphs, ((w - glyphs.get_width()) // 2, (h - glyphs.get_height()) // 2))
-    tobytes = getattr(pygame.image, "tobytes", None) or pygame.image.tostring
-    return tobytes(canvas, "RGBA"), w, h
-
-
-def _send_lines(lib):
-    """each changed line to the kernel, which samples its outline into its drones' places (the sim's sampler), then
-    lays the lines out: the drones fly there (a new second line pours out of the first, a gone one fades)"""
-    t0 = time.perf_counter()
-    lib.tx_line.restype = ctypes.c_int
-    lib.tx_line.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
-    lib.tx_layout.restype = ctypes.c_int
-    lib.tx_layout.argtypes = [ctypes.c_double]
-    said = []
-    for which, key in ((0, "text"), (1, "text2")):
-        if not S.get(key + "_dirty"):
-            continue
-        S[key + "_dirty"] = False
-        text = S[key]
-        if which == 1 and not text:
-            lib.tx_line(1, None, 0, 0, 0, 0)
-            said.append("one line")
-            continue
-        data, w, h = _render_text(text)
-        buf = ctypes.create_string_buffer(data, len(data))
-        rc = lib.tx_line(which, ctypes.addressof(buf), w, h, w * 4, int(COUNT2) if which else 0)
-        if rc < 0 and which == 1:
-            lib.tx_line(1, None, 0, 0, 0, 0)               # nothing to draw on the second line: one line
-        said.append("%r: %s" % (text, ("%d drones" % rc) if rc > 0 else ("not drawn (%d)" % rc)))
-    n = lib.tx_layout(float(LINE_SPACING) * 220.0)
-    _log("text %s -> %d drones (%.0f ms)" % (", ".join(said), n, (time.perf_counter() - t0) * 1000))
-
-
+# ---------------------------------------------------------------------------------------------- the flower
 def _extras(eyesy, au):
-    """the kernel's parameters after the common ones (the settings above); a new text goes to the kernel here"""
+    """the kernel's parameters after the common ones (the settings above); the flower goes to the kernel once"""
     if eyesy is not None:
-        get_text()
-        get_text2()
         lib = S.get("lib")
-        if lib is not None and (S.get("text_dirty") or S.get("text2_dirty")):
+        if lib is not None and not S.get("shape_sent"):
+            S["shape_sent"] = True
             try:
-                _send_lines(lib)
+                lib.tx_shape.restype = ctypes.c_int
+                lib.tx_shape.argtypes = [ctypes.c_int]
+                lib.tx_layout.restype = ctypes.c_int
+                lib.tx_layout.argtypes = [ctypes.c_double]
+                n = lib.tx_shape(1)                        # 1 = the sim's Flower of Life (formations.ts)
+                _log("the Flower of Life: %d drones (%d)" % (n, lib.tx_layout(0.0)))
             except Exception as e:
-                _log("text %r / %r: %r" % (S.get("text"), S.get("text2"), e))
+                _log("the Flower of Life: %r" % (e,))
     return [SAFE_ZONE, SPEED, RIGIDITY, AVOIDANCE, DAMPING, SIZE_MIN, SIZE_MAX, WAVES_MAX, PULSE, PUSH_AWAY, PUSH_SHARE,
             RIPPLES, BASS_SWELL, SHIMMER, HUE_DRIFT, INTENSITY, BRIGHTNESS, DOT, DOT_MIN, STARS]
 
@@ -620,26 +474,16 @@ def _kbench(lib):
 
 # ---------------------------------------------------------------------------------------------- fallback
 def _fallback(screen, eyesy, fg, level, bass):
-    """the text in plain letters across the screen (a second line under it): while the kernel compiles, or without
-    gcc"""
+    """the Flower of Life in plain circles, coloured as the sim's: while the kernel compiles, or without gcc"""
+    import colorsys
     xr, yr = screen.get_width(), screen.get_height()
-    key = (get_text(), get_text2(), xr, yr, tuple(int(c) for c in fg[:3]))
-    if S.get("fb_key") != key:
-        S["fb_key"] = key
-        S["fb"] = None
-        try:
-            lines = [_font().render(t, True, key[4]) for t in key[:2] if t]
-            pitch = int(float(LINE_SPACING) * 220)
-            tw = max(s.get_width() for s in lines)
-            th = lines[0].get_height() + pitch * (len(lines) - 1)
-            surf = pygame.Surface((max(1, tw), max(1, th)), pygame.SRCALPHA)
-            surf.fill((0, 0, 0, 0))
-            for i, s in enumerate(lines):
-                surf.blit(s, ((tw - s.get_width()) // 2, i * pitch))
-            k = min(xr * 0.9 / max(1, tw), yr * 0.9 / max(1, th))
-            S["fb"] = pygame.transform.smoothscale(surf, (max(1, int(tw * k)), max(1, int(th * k))))
-        except Exception as e:
-            _log("fallback text: %r" % (e,))
-    s = S.get("fb")
-    if s is not None:
-        screen.blit(s, ((xr - s.get_width()) // 2, (yr - s.get_height()) // 2))
+    rc = 0.62
+    k = yr * 0.86 / 6.0                                # the flower is about 6 units across: fit the height
+    centres = [(rc * (q + r * 0.5), rc * (r * math.sqrt(3) / 2)) for q in range(-3, 4) for r in range(-3, 4)]
+    centres = [c for c in centres if c[0] ** 2 + c[1] ** 2 <= (2.05 * rc) ** 2]
+    light = 0.6 + 0.4 * min(1.0, max(0.0, level))
+    for i, (cx, cy) in enumerate(centres):
+        rgb = colorsys.hls_to_rgb(0.5 + i / len(centres) * 0.42, 0.58, 0.85)
+        pygame.draw.circle(screen, tuple(int(c * 255 * light) for c in rgb),
+                           (int(xr / 2 + cx * 1.6 * k), int(yr / 2 - cy * 1.6 * k)), max(2, int(rc * 1.6 * k)),
+                           max(1, yr // 240))
