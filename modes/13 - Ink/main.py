@@ -9,38 +9,37 @@ import subprocess
 import threading
 import pygame
 
-# 07 - Soundfield Splats 2
+# 13 - Ink
 #
-# Sound, slowed ~1000x, rippling through a disc of air: 13 - Soundfield Splats redone in the Swarm Visualizer's
-# light. The air is a mesh of glowing particles; every source radiates the music outward at a "speed of sound",
-# the particles are pushed along the waves and lifted by their pressure, so the disc becomes a rippling surface
-# where the waves from several sources cross and interfere. Compressions glow in the foreground colour,
-# rarefactions in its complement; kicks send a sharp crest-and-trough pulse out of every source.
+# Glowing ink in water, stirred by the music: a real fluid simulation (Jos Stam's stable fluids) on the EYESY. Six
+# jets around the middle each play one part of the spectrum, bass to treble - the louder its part, the harder a jet
+# squirts ink of its colour (the foreground colour, the others spread around it on the colour wheel) - and the water
+# carries it, swirling, curling, mixing. Every kick drops a splash of ink with a burst.
 #
-#Knob1 - speed of sound: slow, tight ripples on the left -> fast, wide swells on the right
-#Knob2 - sources: one in the middle -> a pair -> a triangle -> a square -> a ring of six (they slide between)
-#Knob3 - glow: bloom up to the middle; trails from 60 % up
-#Knob4 - foreground color (compressions; rarefactions get the complementary hue)
-#Knob5 - background color
-#Trigger - a clap from every source
+#Knob1 - swirl: calm, smooth flow on the left -> turbulent curls on the right
+#Knob2 - turn: the jets circle the middle one way left of centre, the other right; centre holds them still
+#Knob3 - ink: how long it lingers - wisps that vanish on the left -> clouds that stay on the right
+#Knob4 - foreground color (the ink; the jets spread around it)
+#Knob5 - background color (the water)
+#Trigger - a burst of every colour in the middle
 #
 # Best on stereopsis (its engine analyses the audio: spectrum, bands, waveform, kicks). On the stock engine it still
 # runs, on the level and the scope samples.
-# The renderer is a C kernel (splats2.c + glow.h, next to this file) compiled ON the EYESY the first time the mode
-# runs (~30 s, in the background, one build at a time; a simple preview shows meanwhile). Files: splats2_*.so =
+# The renderer is a C kernel (fluid.c + glow.h, next to this file) compiled ON the EYESY the first time the mode
+# runs (~30 s, in the background, one build at a time; a simple preview shows meanwhile). Files: fluid_*.so =
 # compiled cache (safe to delete); .native_trial / .native_strikes = crash guard; NATIVE_OFF (exists = never use the
 # kernel; the crash guard writes it if the engine dies twice in a row while the kernel is on trial).
 # Dev switches (files containing a number): DEBUG (1 = timings to the log), THREADS (2 = the final pass on two cores,
 # the default; 1 = one), BENCH (1 or 2 = synthetic music instead of the input, for reproducible timings: 2 = a loud
-# club mix), COUNT (how many particles of air, default 5000), KBENCH (exists = time the renderer's inner loops
+# club mix), COUNT (how many (unused), default 1), KBENCH (exists = time the renderer's inner loops
 # once, on the first frame, into the log), ASM (exists = also write the device's assembly of the kernel), DOWN (render
 # at 1/DOWN of the surface's size; default: the full size on stereopsis, half above 400 lines on the stock engine).
 # Written by tools/make_glow_modes.py from the template all glow.h modes share (edit that, not this file).
 
-KERNEL = "splats2"
+KERNEL = "fluid"
 KERNEL_VERSION = 1
 N_COMMON = 21                  # dt, knobs 1-5, fg rgb, bg rgb, level, bass, mid, treble, beat, kick, trig, prefilled, wave Hz
-COUNT = 5000
+COUNT = 1
 KNOWN_GOOD_FRAMES = 60
 GUARD_SECONDS = 3.0
 STEREOPSIS = os.environ.get("STEREOPSIS") == "1"     # the engine this runs on (stereopsis sets it)
@@ -49,7 +48,7 @@ S = {}                 # all state lives here (the module is re-imported on relo
 
 
 def _log(msg):
-    print("[splats2] " + msg)
+    print("[ink] " + msg)
 
 
 def _num(root, name, default):
@@ -336,10 +335,8 @@ def _audio(eyesy):
 
 
 def _extras(eyesy, au):
-    """the kernel's parameters after the common ones: particle size (dev switch SIZE, default 1)"""
-    if "size" not in S:
-        S["size"] = _num(S.get("root", ""), "SIZE", 1.0)
-    return [S["size"]]
+    """no parameters after the common ones"""
+    return []
 
 
 # ---------------------------------------------------------------------------------------------- draw
@@ -436,14 +433,11 @@ def _kbench(lib):
 
 # ---------------------------------------------------------------------------------------------- fallback
 def _fallback(screen, eyesy, fg, level, bass):
-    """rings spreading from the middle, with the level: while the kernel compiles, or without gcc"""
+    """soft blobs of ink drifting round the middle: while the kernel compiles, or without gcc"""
     xr, yr = screen.get_width(), screen.get_height()
-    cx, cy = xr // 2, yr // 2
     t = S["t"]
     for k in range(6):
-        ph = (t * 0.25 + k / 6.0) % 1.0
-        r = int(yr * 0.45 * ph)
-        if r > 2:
-            fade = (1.0 - ph) * (0.4 + 0.6 * level)
-            col = tuple(int(c * fade) for c in fg[:3])
-            pygame.draw.ellipse(screen, col, (cx - r, cy - r // 3, 2 * r, 2 * r // 3), max(1, yr // 180))
+        a = t * 0.3 + k * 1.047
+        r = int(yr * (0.06 + 0.08 * level))
+        x, y = int(xr / 2 + math.cos(a) * yr * 0.3), int(yr / 2 + math.sin(a) * yr * 0.3)
+        pygame.draw.circle(screen, tuple(int(c * (0.4 + 0.6 * level)) for c in fg[:3]), (x, y), max(2, r))

@@ -19,10 +19,10 @@ Unofficial: not affiliated with or endorsed by Critter & Guitari.
     screen in ~11-17 ms instead of ~50
   - **a way back at any moment**: hold Shift + Persist for a second and the EYESY switches to Critter & Guitari's
     engine on the same mode (and back the same way)
-- **Fifteen modes**, first in the mode list (below): six figures of a 4096-drone light swarm, two soundfield
-  simulations, a circuit board, a transformer network, a 3D oscilloscope, a plasma globe, a fluid simulation, a word
-  written by 2400 drones with real swarm physics (FREE.VET, or any text you type on the page, on one line or two),
-  and the Flower of Life formed by 2400 drones the same way.
+- **Fifteen modes**, first in the mode list (below): a word written by 2400 drones with real swarm physics
+  (FREE.VET, or any text you type on the page, on one line or two: the mode the EYESY starts on), six figures of a
+  4096-drone light swarm, two soundfield simulations, a circuit board, a transformer network, a 3D oscilloscope, a
+  plasma globe, a fluid simulation, and the Flower of Life formed by 2400 drones the same way as the word.
   Their renderers are small C programs the EYESY compiles for itself the first time.
 - **The factory modes**: the 19 Critter & Guitari published after OS v3.1 are added, and 54 are adjusted so they
   move at their original speed at 60 frames a second.
@@ -59,7 +59,7 @@ stereopsis ever fails to start, the EYESY starts Critter & Guitari's engine inst
 What the installer puts on the card:
 
 - `/sdcard/stereopsis/engine`: the engine (and `/sdcard/stereopsis` its settings, as you change them)
-- `/sdcard/Modes/01 - Swarm - Tunnel` .. `15 - Swarm - Flower of Life`, and `Z - Engine Lab`, the small mode that starts
+- `/sdcard/Modes/01 - Swarm - Text` .. `15 - Swarm - Flower of Life`, and `Z - Engine Lab`, the small mode that starts
   stereopsis at every boot (leave it, and its name, as they are)
 - the factory modes' adjusted `main.py`, only where your card has exactly the version Critter & Guitari published;
   the originals are kept in `/sdcard/stereopsis/backup`. A factory mode you changed yourself is left alone.
@@ -73,7 +73,7 @@ What the installer puts on the card:
 - **Size**: the page's Size row sets what the mode on screen draws at: the display's size, half or a quarter (on a
   720p display 1280x720, 640x360 or 320x180). The display scales it to the screen for free, so a smaller size costs nothing but sharpness and lets a
   heavy mode run at 60 frames a second. It is remembered for each mode.
-- **Text**: on 14 - Swarm - Text the page shows a Text box: type a word, press Set, and the drones fly to it
+- **Text**: on 01 - Swarm - Text the page shows a Text box: type a word, press Set, and the drones fly to it
   (Reset goes back to the texts in the mode's file). The **Line 2** switch under it adds a second line with drones of
   its own: switch it on, type the line, press Set, and it pours out of the first line, which moves up to make room;
   switch it off and the second line fades away. Both are kept for next time, in the mode folder's `TEXT` and `TEXT2`
@@ -92,25 +92,25 @@ What the installer puts on the card:
 
 | Mode | What it is | Knob 1 | Knob 2 | Trigger |
 |---|---|---|---|---|
-| 01 - Swarm - Tunnel | rings of drones flying away down a tunnel, each shaped by the bass the moment it was born; they roll as they go | turn: the middle looks straight down the tunnel, either way swings it round (side on at a quarter turn) | lights: a tenth of the drones on the left, all of them on the right, always evenly spaced | a burst (the swarm also bursts on kicks) |
-| 02 - Swarm - Ribbon | the live waveform wrapped around a ring | camera distance | wave height: a calm ring on the left, tall waves on the right | hold: the ring smooths out and breathes from small to large and back; a tap from the page or MIDI bursts the swarm |
-| 03 - Swarm - Terrain | a scrolling spectrogram landscape; it holds still, only the knobs move it | camera distance | turn: one way left of centre, the other right, still at the centre | nothing |
-| 04 - Swarm - Orb | an energy planet: the spectrum pushes the sphere's surface out, pole to pole | camera distance | tumble: the orb rolls over, up or down | hold: the orb breathes from small to large and back |
-| 05 - Swarm - Nebula | a noise cloud that breathes and churns with the bass | camera distance, and how hard the kicks push: widest far away, barely close up | orbit | hold: the cloud breathes from small to large and back |
-| 06 - Swarm - Cymatics | a Chladni plate: the drones vibrate as a standing wave, the nodal lines hold still and dark, and every kick steps the plate to its next pattern | plate size: few nodes on the left, many on the right | orbit | a burst |
-| 07 - Soundfield Splats 2 | sound slowed ~1000x, rippling through a disc of glowing air particles | speed of sound | sources: one, a pair, a triangle, a square, a ring of six | a clap from every source |
-| 08 - Circuit | a generated circuit board with the music running through it as data | distance: the whole board, down to one chip | turn | a power surge from the CPU |
-| 09 - Transformer | a tiny transformer (the kind of network inside a language model) running on the music, drawn as its glowing weights | distance: the whole wall of panels, down to one | turn (up to 75 degrees) | the wave of light brighter for a moment |
-| 10 - Phase Space | a 3D oscilloscope: the waveform drawn in its own phase space by a CRT beam | delay: the middle follows the pitch | turn | a strobe flash of the beam |
-| 11 - Plasma Globe | plasma filaments, one band of the spectrum each, bowing and forking to the glass | voltage: a few calm filaments, up to a storm | turn | hold: a hand on the glass, every filament gathers to it; a tap touches it for a moment |
-| 12 - Ink | glowing ink in water, stirred by six jets that each play a part of the spectrum (a real fluid simulation) | swirl | turn: the jets circle the middle | a burst of every colour |
-| 13 - Soundfield Splats | the original soundfield: sound slowed ~1000x through a disc of 3000 air particles, the left and right channels as two sources | speed of sound | orbit | a clap from both sources |
-| 14 - Swarm - Text | a word written by 2400 drones along its outline, with free.vet's swarm physics: each drone springs to its place and pushes off its neighbours, so when the word is too small to hold them all they become a living blob fighting for room; the music pulses the lights, sends waves and ripples through the swarm and drifts the colours | size: a blob of drones fighting for room on the left, the whole word on the right | waves: none on the left, 3x on the right | a ripple out of the middle |
-| 15 - Swarm - Flower of Life | the Flower of Life, 19 overlapping circles, formed by 2400 drones with the same swarm physics and audio effects as 14 - Swarm - Text | size: a crowd of drones fighting for room on the left, every circle traced in dots on the right | waves: none on the left, 3x on the right | a ripple out of the middle |
+| 01 - Swarm - Text | a word written by 2400 drones along its outline, with free.vet's swarm physics: each drone springs to its place and pushes off its neighbours, so when the word is too small to hold them all they become a living blob fighting for room; the music pulses the lights, sends waves and ripples through the swarm and drifts the colours | size: a blob of drones fighting for room on the left, the whole word on the right | waves: none on the left, 3x on the right | a ripple out of the middle |
+| 02 - Swarm - Tunnel | rings of drones flying away down a tunnel, each shaped by the bass the moment it was born; they roll as they go | turn: the middle looks straight down the tunnel, either way swings it round (side on at a quarter turn) | lights: a tenth of the drones on the left, all of them on the right, always evenly spaced | a burst (the swarm also bursts on kicks) |
+| 03 - Swarm - Ribbon | the live waveform wrapped around a ring | camera distance | wave height: a calm ring on the left, tall waves on the right | hold: the ring smooths out and breathes from small to large and back; a tap from the page or MIDI bursts the swarm |
+| 04 - Swarm - Terrain | a scrolling spectrogram landscape; it holds still, only the knobs move it | camera distance | turn: one way left of centre, the other right, still at the centre | nothing |
+| 05 - Swarm - Orb | an energy planet: the spectrum pushes the sphere's surface out, pole to pole | camera distance | tumble: the orb rolls over, up or down | hold: the orb breathes from small to large and back |
+| 06 - Swarm - Nebula | a noise cloud that breathes and churns with the bass | camera distance, and how hard the kicks push: widest far away, barely close up | orbit | hold: the cloud breathes from small to large and back |
+| 07 - Swarm - Cymatics | a Chladni plate: the drones vibrate as a standing wave, the nodal lines hold still and dark, and every kick steps the plate to its next pattern | plate size: few nodes on the left, many on the right | orbit | a burst |
+| 08 - Soundfield Splats 2 | sound slowed ~1000x, rippling through a disc of glowing air particles | speed of sound | sources: one, a pair, a triangle, a square, a ring of six | a clap from every source |
+| 09 - Circuit | a generated circuit board with the music running through it as data | distance: the whole board, down to one chip | turn | a power surge from the CPU |
+| 10 - Transformer | a tiny transformer (the kind of network inside a language model) running on the music, drawn as its glowing weights | distance: the whole wall of panels, down to one | turn (up to 75 degrees) | the wave of light brighter for a moment |
+| 11 - Phase Space | a 3D oscilloscope: the waveform drawn in its own phase space by a CRT beam | delay: the middle follows the pitch | turn | a strobe flash of the beam |
+| 12 - Plasma Globe | plasma filaments, one band of the spectrum each, bowing and forking to the glass | voltage: a few calm filaments, up to a storm | turn | hold: a hand on the glass, every filament gathers to it; a tap touches it for a moment |
+| 13 - Ink | glowing ink in water, stirred by six jets that each play a part of the spectrum (a real fluid simulation) | swirl | turn: the jets circle the middle | a burst of every colour |
+| 14 - Soundfield Splats | the original soundfield: sound slowed ~1000x through a disc of 3000 air particles, the left and right channels as two sources | speed of sound | orbit | a clap from both sources |
+| 15 - Swarm - Flower of Life | the Flower of Life, 19 overlapping circles, formed by 2400 drones with the same swarm physics and audio effects as 01 - Swarm - Text | size: a crowd of drones fighting for room on the left, every circle traced in dots on the right | waves: none on the left, 3x on the right | a ripple out of the middle |
 
 On the swarm modes, knob 1 left of the middle moves the camera further away and right of it closer (the middle is the
 original framing); the knobs called orbit or turn hold still at their centre. Switching between the six swarm modes
-morphs the drones from one figure into the next. In 12 - Ink, knob 3 sets how long the ink lingers. In 14 - Swarm -
+morphs the drones from one figure into the next. In 13 - Ink, knob 3 sets how long the ink lingers. In 01 - Swarm -
 Text, knob 4 turns its rainbow around the colour wheel; the word always fills the width of the screen, and the settings
 at the top of its `main.py` (the physics, the audio effects and their amounts, the font) are the ones of the swarm
 simulator at sim.free.vet. 15 - Swarm - Flower of Life runs the same simulation with the same settings on the
@@ -120,7 +120,8 @@ second with the glow (knob 3 up to the middle), 33 to 47 with trails; the Size r
 ## Updating
 
 Download the new version and run `python install.py <address>` again: it changes only what is different and keeps
-your Size choices and the texts you set on the page.
+your Size choices and the texts you set on the page. When a new version numbers the modes differently (2026-10-10:
+the text mode first), it renames your mode folders, with what is in them, instead of adding new ones.
 
 ## Uninstall
 
@@ -160,15 +161,15 @@ them with `getattr(eyesy, name, default)` and a mode still runs on the stock eng
 |---|---|---|
 | `engine/` | stereopsis: Critter & Guitari's `EYESY_OS/engines/python` (commit 51cc186, OS v3.1) with every change marked `FORK:` in `main.py`, plus the display layer (`kms.c`), the audio analysis (`audio.c`, `analysis.py`) and the page (`preview.py`) | BSD 3-Clause (`engine/LICENSE.txt`): Critter & Guitari's code keeps their copyright; the changes are under the same terms |
 | `factory-modes/` | Critter & Guitari's 108 published OS v3 modes' `main.py`, 54 adjusted for 60 frames a second (and a fix to Circle Scope - Image, which does not load as published), with `published.json`: the published files' checksums, which the installer compares before replacing anything | BSD 2-Clause (`factory-modes/LICENSE`) |
-| `modes/` | the fifteen modes and the Engine Lab | MIT (`LICENSE`), except the font in `14 - Swarm - Text`: Indie Flower, SIL Open Font License 1.1 (its `OFL.txt` beside it) |
+| `modes/` | the fifteen modes and the Engine Lab | MIT (`LICENSE`), except the font in `01 - Swarm - Text`: Indie Flower, SIL Open Font License 1.1 (its `OFL.txt` beside it) |
 | `install.py`, `docs/` | the installer and the engine notes | MIT (`LICENSE`) |
 
 The MIT licence in `LICENSE` covers the files written for this project: `modes/` (except the font in
-`14 - Swarm - Text`), `install.py` and `docs/`. `engine/` is a fork of Critter & Guitari's EYESY_OS and stays under its
+`01 - Swarm - Text`), `install.py` and `docs/`. `engine/` is a fork of Critter & Guitari's EYESY_OS and stays under its
 BSD 3-Clause licence; `factory-modes/` holds Critter & Guitari's modes under their BSD 2-Clause licence.
 
 The engine's font is Nunito (SIL Open Font License 1.1), as it ships with EYESY_OS. The swarm modes bring the drone
-swarm visualizer and simulator from free.vet to the EYESY; 14 - Swarm - Text writes in Indie Flower by Kimberly
+swarm visualizer and simulator from free.vet to the EYESY; 01 - Swarm - Text writes in Indie Flower by Kimberly
 Geswein (SIL Open Font License 1.1).
 
 stereopsis: seeing depth by fusing two views, for a synth called EYESY.

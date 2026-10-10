@@ -9,22 +9,24 @@ import subprocess
 import threading
 import pygame
 
-# 04 - Swarm - Orb
+# 07 - Swarm - Cymatics
 #
-# free.vet's drone-swarm visualizer on the EYESY, one figure per mode - this one: an energy planet: the spectrum pushes a sphere's surface out, pole to pole
+# free.vet's drone-swarm visualizer on the EYESY, one figure per mode - this one: free.vet's Chladni plate: a grid of drones vibrating as a standing wave - the antinodes pump up
+# and down (harder on the bass), the nodal lines hold still and dark - and every kick (at most
+# one every 0.9 s) steps the plate up its mode ladder, the figure melting into the next
 # Drones pulse with the energy, flash on kicks, twinkle with the treble, and the bass breathes and spins them.
 #
-#Knob1 - camera distance: left = further away, right = closer (the middle = the original framing)
-#Knob2 - tumble: the orb rolls over (up / down) one way left of centre, the other right; centre holds still
+#Knob1 - plate size: a small plate with few nodes on the left -> a big one with many on the right (the
+#        view keeps it framed)
+#Knob2 - camera orbit: left of centre spins one way, right the other, centre holds still
 #Knob3 - glow: bloom up to the middle; trails from 60 % up
 #Knob4 - colour: turns the palette around the colour wheel
 #Knob5 - background color
-#Trigger - hold it: the orb smooths out and breathes, slowly, from small to large and back, for as long as
-#          you hold (a tap from the page or MIDI bursts the swarm; it also bursts on kicks)
+#Trigger - the swarm bursts outward and reforms
 # The Trigger here is the performer's: the button, the page, MIDI (stereopsis 0.9.1's eyesy.trig_audio tells them from
 # the loudness trigger, which a hot input fires nearly every frame); the bursts with the music come from detected kicks.
 #
-# The Swarm modes (01 - Swarm - Tunnel .. 06 - Swarm - Cymatics) share one compiled kernel and its state:
+# The Swarm modes (02 - Swarm - Tunnel .. 07 - Swarm - Cymatics) share one compiled kernel and its state:
 # switching between them morphs the drones from one figure into the next.
 # Best on stereopsis (its engine analyses the audio: spectrum, waveform, kicks). On the stock engine it still
 # runs, reacting to the level (the spectrum figures hold their rest shapes, no kicks).
@@ -39,7 +41,7 @@ import pygame
 # full size on stereopsis, half above 400 lines on the stock engine).
 # Written by tools/make_swarm_modes.py from one template, the same for every figure (edit that, not this file).
 
-STYLE = 3
+STYLE = 6
 STEREOPSIS = os.environ.get("STEREOPSIS") == "1"     # the engine this runs on (stereopsis sets it)
 RIBBON, TERRAIN, ORB, NEBULA, TUNNEL, CYMATICS = (STYLE == 1, STYLE == 2, STYLE == 3, STYLE == 4, STYLE == 5,
                                                   STYLE == 6)

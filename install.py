@@ -43,8 +43,28 @@ BINARY = (".ttf", ".otf")
 # render sizes for a first install (the page's Size row changes them; they are kept on an update): the heavier modes
 # at half size, where they run at 60 frames a second
 DEFAULT_SCALE = {"default": "full", "modes": {
-    "04 - Swarm - Orb": "640x360", "05 - Swarm - Nebula": "640x360", "06 - Swarm - Cymatics": "640x360",
-    "07 - Soundfield Splats 2": "640x360", "10 - Phase Space": "640x360", "T - Woven Feedback": "640x360"}}
+    "05 - Swarm - Orb": "640x360", "06 - Swarm - Nebula": "640x360", "07 - Swarm - Cymatics": "640x360",
+    "08 - Soundfield Splats 2": "640x360", "11 - Phase Space": "640x360", "T - Woven Feedback": "640x360"}}
+# our modes' folders that a later version numbered differently (old name -> new, oldest first): an update renames them
+# on the EYESY, with what is in them (a text set on the page, the compiled renderers), and their entries in scale.json
+# and in the install record, instead of adding the new names beside the old ones
+RENAMED = [
+    # 2026-10-10: the text mode first, the others one down
+    ("14 - Swarm - Text", "01 - Swarm - Text"),
+    ("01 - Swarm - Tunnel", "02 - Swarm - Tunnel"),
+    ("02 - Swarm - Ribbon", "03 - Swarm - Ribbon"),
+    ("03 - Swarm - Terrain", "04 - Swarm - Terrain"),
+    ("04 - Swarm - Orb", "05 - Swarm - Orb"),
+    ("05 - Swarm - Nebula", "06 - Swarm - Nebula"),
+    ("06 - Swarm - Cymatics", "07 - Swarm - Cymatics"),
+    ("07 - Soundfield Splats 2", "08 - Soundfield Splats 2"),
+    ("08 - Circuit", "09 - Circuit"),
+    ("09 - Transformer", "10 - Transformer"),
+    ("10 - Phase Space", "11 - Phase Space"),
+    ("11 - Plasma Globe", "12 - Plasma Globe"),
+    ("12 - Ink", "13 - Ink"),
+    ("13 - Soundfield Splats", "14 - Soundfield Splats"),
+]
 PREVIEW_PORT = 8081
 
 
@@ -155,6 +175,15 @@ class Eyesy:
         self._forget(path.rsplit("/", 1)[0])
         self._forget(path)
 
+    def rename(self, path, name):
+        """a folder renamed where it is, with everything in it"""
+        parent = path.rsplit("/", 1)[0]
+        self.fm(operation="rename_node", path=path, name=name)
+        self._forget(parent)
+        self._forget(path)
+        if self.exists(path) or not self.exists(parent + "/" + name):
+            raise RuntimeError("could not rename %s to %s" % (path, name))
+
     def _forget(self, path):
         for k in [k for k in self._dirs if k == path or k.startswith(path + "/")]:
             del self._dirs[k]
@@ -256,15 +285,27 @@ def plan_install(ey, info):
     version = engine_version(eng.get("main.py"))
     notes.append("engine      stereopsis %s: %d files (%d new, %d changed, %d already there) -> /%s"
                  % (version, len(eng), new_eng, changed_eng, len(eng) - new_eng - changed_eng, ENGINE_DIR))
-    # 2. our modes and the lab
+    # 2. our modes and the lab: first the folders an earlier version numbered differently, renamed with what is in
+    #    them (the engine stopped meanwhile: a mode on screen keeps files in its folder); then every file that differs
     ours = {}
     for rel, data in local_files("modes").items():
         mode, f = rel.split("/", 1)
         ours.setdefault(mode, {})[f] = data
-    created = list(manifest.get("created_folders", []))
+    renamed = [(old, new) for old, new in RENAMED if old in info["modes"] and new not in info["modes"]]
+    if renamed:
+        steps.append(("stop", None, None, None))
+        for old, new in renamed:
+            steps.append(("rename", SD + "/Modes/" + old, new.encode(), None))
+            info["modes"] = (info["modes"] - {old}) | {new}
+        notes.append("renamed     %d of our mode folders to this version's numbers (%s first), with what is in them"
+                     % (len(renamed), sorted(ours)[0]))
+    now_at = {new: old for old, new in renamed}                 # (until its step runs, a folder has its old name)
+    renames = dict(RENAMED)
+    created = [renames.get(m, m) for m in manifest.get("created_folders", [])]
     n_new = n_changed = 0
     for mode in sorted(ours):
         folder = SD + "/Modes/" + mode
+        here = SD + "/Modes/" + now_at.get(mode, mode)
         if mode not in info["modes"]:
             steps.append(("mkdir", folder, None, None))
             if mode not in created:
@@ -272,11 +313,11 @@ def plan_install(ey, info):
             n_new += 1
         else:
             for f, data in ours[mode].items():
-                if ey.read(folder + "/" + f) != data:
+                if ey.read(here + "/" + f) != data:
                     n_changed += 1
                     break
         for f, data in sorted(ours[mode].items()):
-            if mode not in info["modes"] or ey.read(folder + "/" + f) != data:
+            if mode not in info["modes"] or ey.read(here + "/" + f) != data:
                 steps.append(("upload" if f.endswith(BINARY) else "save", folder + "/" + f, data, None))   # (a font)
     notes.append("our modes   %d folders (%d new, %d changed): %s .. %s, and %s (it starts stereopsis)"
                  % (len(ours), n_new, n_changed, sorted(ours)[0], sorted(m for m in ours if m != LAB)[-1], LAB))
@@ -327,13 +368,26 @@ def plan_install(ey, info):
     if kept_as_is:
         notes.append("            left as they are (not the published version, so not replaced; they may move twice "
                      "as fast under stereopsis): %s" % ", ".join(kept_as_is))
-    # 4. render sizes: only on a first install
-    if ey.read(SCALE) is None:
+    # 4. render sizes: the defaults only on a first install; later the entries of renamed modes follow their modes
+    cur_scale = ey.read(SCALE)
+    if cur_scale is None:
         steps.append(("save", SCALE, (json.dumps(DEFAULT_SCALE, indent=2) + "\n").encode(), None))
         notes.append("sizes       scale.json: %s at 640x360, the rest at the full size (the page's Size row "
                      "changes them)" % ", ".join(sorted(DEFAULT_SCALE["modes"])))
     else:
-        notes.append("sizes       scale.json kept as it is")
+        try:
+            sc = json.loads(cur_scale.decode("utf-8"))
+            entries = sc.get("modes") if isinstance(sc, dict) else None
+        except ValueError:
+            entries = None
+        moved = [(o, n) for o, n in RENAMED if isinstance(entries, dict) and o in entries and n not in entries]
+        if moved:
+            for o, n in moved:
+                entries[n] = entries.pop(o)
+            steps.append(("save", SCALE, (json.dumps(sc, indent=2) + "\n").encode(), None))
+            notes.append("sizes       scale.json kept; the entries of %d renamed modes renamed with them" % len(moved))
+        else:
+            notes.append("sizes       scale.json kept as it is")
     new_manifest = {"stereopsis": version, "installed": time.strftime("%Y-%m-%d %H:%M"),
                     "first_installed": manifest.get("first_installed", time.strftime("%Y-%m-%d %H:%M")),
                     "created_folders": created, "factory": fac_done}
@@ -373,7 +427,8 @@ def plan_uninstall(ey, info, force):
                 steps.append(("delete", SD + "/Modes/" + mode, None, None))
                 removed_factory.append(mode)
     created = manifest.get("created_folders") or sorted(ours)
-    gone = [m for m in created if m in ours and m in info["modes"]]
+    known = ours | {old for old, _ in RENAMED}                 # (an install from before a renumbering, not updated)
+    gone = [m for m in created if m in known and m in info["modes"]]
     for mode in gone:
         steps.append(("delete", SD + "/Modes/" + mode, None, None))
     if ey.exists(SD + "/stereopsis"):
@@ -393,7 +448,12 @@ def run(ey, steps):
     sys.stdout.write("  working ")
     sys.stdout.flush()
     for i, (kind, path, data, _) in enumerate(steps, 1):
-        if kind == "mkdir":
+        if kind == "stop":
+            ey.stop()
+            time.sleep(2)
+        elif kind == "rename":
+            ey.rename(path, data.decode("utf-8"))
+        elif kind == "mkdir":
             ey.mkdir(path)
         elif kind == "save":
             ey.mkdir(path.rsplit("/", 1)[0])           # (a no-op when the folder is there)
@@ -503,11 +563,12 @@ def main(argv):
     for line in notes:
         say("  " + line)
     restart = "--no-restart" not in flags
+    stops = any(k == "stop" for k, _, _, _ in steps)          # (renaming folders: the engine starts again after)
     if not steps:
         say("\nNothing to change: the EYESY already has all of it.")
         return 0
-    say("  then        %s" % ("restart the video engine" if restart or uninstall else
-                              "nothing more (--no-restart: it takes effect at the engine's next start)"))
+    say("  then        %s" % ("restart the video engine" if restart or uninstall else "start the video engine again"
+                              if stops else "nothing more (--no-restart: it takes effect at the engine's next start)"))
     say("  (%d steps)" % len(steps))
     if "--check" in flags:
         say("\n--check: nothing was changed.")
@@ -540,6 +601,10 @@ def main(argv):
     say("Files done.")
     if restart:
         return 0 if restart_and_wait(ey, True) else 1
+    if stops:
+        ey.start()
+        say("The video engine is starting again (it was stopped while the folders were renamed).")
+        return 0
     say("It takes effect at the video engine's next start (Shift + OSD > System > Restart Video, or power-cycle).")
     return 0
 

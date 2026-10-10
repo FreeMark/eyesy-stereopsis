@@ -9,37 +9,36 @@ import subprocess
 import threading
 import pygame
 
-# 08 - Circuit
+# 11 - Phase Space
 #
-# A printed circuit board with the music running through it as data. The board is generated once: a CPU in the
-# middle, memory and smaller chips around it, connectors on two edges, a crystal, passives and LEDs; every chip's pins
-# leave in buses of parallel traces that bend at 45 degrees and end in rows of vias. Each chip listens to its own
-# part of the spectrum and, when that part rises, sends a word down one of its buses: pulses of light on the 1-bits,
-# racing to the vias, which flash as they arrive. Every kick fires all of the CPU's buses at once and its die glows
-# with the bass; the crystal ticks, LEDs flicker with the treble. The camera looks down at the board and drifts
-# across it.
+# An oscilloscope in three dimensions. Every point of the glowing curve is the sound now, a moment ago and two
+# moments ago - the waveform drawn in its own phase space. The moment follows the music's pitch, so a pure tone traces
+# a circle, an octave a figure-eight, a chord a knot, noise a cloud, a kick a burst from the middle. The beam lights
+# the screen as an electron beam would: brightest where it moves slowest, the newest part hottest, the phosphor's
+# afterglow on knob 3. The figure scales itself to the loudness and swells on kicks.
 #
-#Knob1 - distance: the whole board on the left -> one chip filling the screen on the right
-#Knob2 - turn: the board turns one way left of centre, the other way right; centre holds still
-#Knob3 - glow: bloom up to the middle; trails from 60 % up
-#Knob4 - foreground color: the data (the LEDs take the colour a third of the way round the wheel)
-#Knob5 - background color (the board)
-#Trigger - a power surge: a ring of light runs out over the copper from the CPU, which fires every bus
+#Knob1 - delay: the middle follows the pitch; left shortens it (the curve closes toward a line), right stretches
+#        it (more knotted)
+#Knob2 - turn: the figure spins one way left of centre, the other right; centre holds still
+#Knob3 - glow: bloom up to the middle; phosphor afterglow from 60 % up
+#Knob4 - foreground color (the beam)
+#Knob5 - background color
+#Trigger - a strobe flash of the beam
 #
 # Best on stereopsis (its engine analyses the audio: spectrum, bands, waveform, kicks). On the stock engine it still
 # runs, on the level and the scope samples.
-# The renderer is a C kernel (circuit.c + glow.h, next to this file) compiled ON the EYESY the first time the mode
-# runs (~30 s, in the background, one build at a time; a simple preview shows meanwhile). Files: circuit_*.so =
+# The renderer is a C kernel (phase.c + glow.h, next to this file) compiled ON the EYESY the first time the mode
+# runs (~30 s, in the background, one build at a time; a simple preview shows meanwhile). Files: phase_*.so =
 # compiled cache (safe to delete); .native_trial / .native_strikes = crash guard; NATIVE_OFF (exists = never use the
 # kernel; the crash guard writes it if the engine dies twice in a row while the kernel is on trial).
 # Dev switches (files containing a number): DEBUG (1 = timings to the log), THREADS (2 = the final pass on two cores,
 # the default; 1 = one), BENCH (1 or 2 = synthetic music instead of the input, for reproducible timings: 2 = a loud
-# club mix), COUNT (how many boards (the seed: another number, another board), default 1), KBENCH (exists = time the renderer's inner loops
+# club mix), COUNT (how many (unused), default 1), KBENCH (exists = time the renderer's inner loops
 # once, on the first frame, into the log), ASM (exists = also write the device's assembly of the kernel), DOWN (render
 # at 1/DOWN of the surface's size; default: the full size on stereopsis, half above 400 lines on the stock engine).
 # Written by tools/make_glow_modes.py from the template all glow.h modes share (edit that, not this file).
 
-KERNEL = "circuit"
+KERNEL = "phase"
 KERNEL_VERSION = 1
 N_COMMON = 21                  # dt, knobs 1-5, fg rgb, bg rgb, level, bass, mid, treble, beat, kick, trig, prefilled, wave Hz
 COUNT = 1
@@ -51,7 +50,7 @@ S = {}                 # all state lives here (the module is re-imported on relo
 
 
 def _log(msg):
-    print("[circuit] " + msg)
+    print("[phase] " + msg)
 
 
 def _num(root, name, default):
@@ -436,16 +435,10 @@ def _kbench(lib):
 
 # ---------------------------------------------------------------------------------------------- fallback
 def _fallback(screen, eyesy, fg, level, bass):
-    """traces and a chip, the level running along them: while the kernel compiles, or without gcc"""
+    """the scope samples plotted against themselves a few samples back: while the kernel compiles, or without gcc"""
     xr, yr = screen.get_width(), screen.get_height()
-    cx, cy = xr // 2, yr // 2
-    t = S["t"]
-    s = yr // 36
-    dim = tuple(int(c * 0.25) for c in fg[:3])
-    pygame.draw.rect(screen, dim, (cx - 3 * s, cy - 3 * s, 6 * s, 6 * s), max(1, s // 4))
-    for k in range(-4, 5):
-        y = cy + k * s // 2
-        x0 = cx + 3 * s
-        pygame.draw.line(screen, dim, (x0, y), (xr - s, y), 1)
-        px = x0 + int(((t * 0.8 + k * 0.13) % 1.0) * (xr - s - x0))
-        pygame.draw.circle(screen, fg, (px, y), max(2, s // 5))
+    ain = eyesy.audio_in
+    k = yr * 0.4 / 32768.0 * 3.0
+    pts = [(int(xr / 2 + ain[i] * k), int(yr / 2 - ain[i - 4] * k)) for i in range(4, len(ain))]
+    if len(pts) > 1:
+        pygame.draw.lines(screen, fg, False, pts, max(1, yr // 360))

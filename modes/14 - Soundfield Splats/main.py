@@ -11,7 +11,7 @@ import array
 import colorsys
 import pygame
 
-# 13 - Soundfield Splats
+# 14 - Soundfield Splats
 #
 # Sound, slowed ~1000x, moving through a disc of air particles in 3D. Two sources (left and right
 # input channels) radiate their signal outward; each particle is pushed along the direction of travel

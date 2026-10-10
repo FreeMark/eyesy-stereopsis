@@ -12,7 +12,7 @@ import pygame
 # 15 - Swarm - Flower of Life
 #
 # free.vet's swarm sim forming its Flower of Life - 19 overlapping circles in the hex arrangement - in 2400
-# drones, with the sim's neighbor physics and audio rack set as for 14 - Swarm - Text (whose kernel this runs:
+# drones, with the sim's neighbor physics and audio rack set as for 01 - Swarm - Text (whose kernel this runs:
 # flowerswarm.c is a copy of its textswarm.c). Each drone springs to its place on a circle and pushes off any
 # neighbour inside its safe zone, so where the circles cross, and at a small size, the drones fight for room. The
 # music pulses the lights, the bass sends waves through the safe zones and every kick a ripple (the swarm adapts

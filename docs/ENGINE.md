@@ -43,7 +43,7 @@ screen) and `set_text(text)` (a new one; return what you set, or None to refuse)
 that mode: the box shows `get_text()`, Set calls `set_text` with what was typed (up to 64 printable characters),
 Reset calls it with the module's `TEXT`. Both run on the engine's thread, between frames (`get_text` once a frame,
 for `/state.json` `"text"`, which is null for any other mode). Scripts: `{"act": "text", "value": "...",
-"mode": "<its name>"}` or `{"act": "text", "reset": true}` on `/control`. 14 - Swarm - Text keeps the text in
+"mode": "<its name>"}` or `{"act": "text", "reset": true}` on `/control`. 01 - Swarm - Text keeps the text in
 its folder's `TEXT` file, so it survives a restart.
 
 A second line (stereopsis 0.11): give the module `get_text2()` too (its second line, `""` while it shows one) and
@@ -51,7 +51,7 @@ A second line (stereopsis 0.11): give the module `get_text2()` too (its second l
 second box (with the line it had before, sent at once, or empty to type in and Set), Set sends both lines, off goes
 back to one line at once; Reset also calls `set_text2` with the module's `TEXT2`. `/state.json` has `"text2"` (null
 for a mode without a second line); scripts: `{"act": "text", "value2": "..."}`, with or without `"value"`.
-14 - Swarm - Text gives the second line drones of its own and keeps it in its `TEXT2` file (an empty one = one
+01 - Swarm - Text gives the second line drones of its own and keeps it in its `TEXT2` file (an empty one = one
 line).
 
 ## For mode authors: the audio analysis

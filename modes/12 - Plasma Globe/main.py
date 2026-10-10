@@ -9,38 +9,35 @@ import subprocess
 import threading
 import pygame
 
-# 09 - Transformer
+# 12 - Plasma Globe
 #
-# A small transformer - the kind of network inside a language model - running on the music, drawn as its weights.
-# Every sixteenth note (at the tempo stereopsis hears) the spectrum becomes a token; the model keeps the last 16 (a
-# bar), and each of its four attention heads listens to a quarter of the spectrum, bass to treble, looking back for
-# the moments that sounded like now - so the music's repetitions draw diagonals across the attention maps, a
-# steady beat every four tokens. Its weights are glass panels of dots: each dot glows with what that weight gives the
-# newest token (the foreground colour when it adds, the complement when it takes away), so every token sends a
-# wave of light through EMBED, Q K V, ATTENTION, MLP and OUT, along the beams between them. OUT is the model's guess
-# at the next token, and glows when the music surprises it.
+# A plasma ball. Filaments of plasma run from the electrode to the glass, each one a band of the spectrum burning
+# with it; the louder the music, the more of them burn. They bow and fizz (the treble makes them fizzier), fork near
+# the glass and light a hot spot where they touch it, drifting over it, a little upward. Every kick makes them flare;
+# the electrode glows with the bass.
 #
-#Knob1 - distance: the whole wall of panels on the left -> close up on the right, gliding from panel to panel
-#Knob2 - turn: the middle faces the wall; turn it either way to see the panels from the side (up to 75 degrees)
+#Knob1 - voltage: a few calm filaments on the left -> an electric storm on the right
+#Knob2 - turn: the globe turns one way left of centre, the other right; centre holds still
 #Knob3 - glow: bloom up to the middle; trails from 60 % up
-#Knob4 - foreground color (weights that add; those that take away get the complement)
+#Knob4 - foreground color (the plasma; black gives the classic violet)
 #Knob5 - background color
-#Trigger - the wave of light brighter for a moment (tokens come with the tempo)
+#Trigger - a hand on the glass: hold it and every filament gathers to where it touches, until you let go; a tap
+#          (page, MIDI) touches for a moment
 #
 # Best on stereopsis (its engine analyses the audio: spectrum, bands, waveform, kicks). On the stock engine it still
 # runs, on the level and the scope samples.
-# The renderer is a C kernel (transformer.c + glow.h, next to this file) compiled ON the EYESY the first time the mode
-# runs (~30 s, in the background, one build at a time; a simple preview shows meanwhile). Files: transformer_*.so =
+# The renderer is a C kernel (plasma.c + glow.h, next to this file) compiled ON the EYESY the first time the mode
+# runs (~30 s, in the background, one build at a time; a simple preview shows meanwhile). Files: plasma_*.so =
 # compiled cache (safe to delete); .native_trial / .native_strikes = crash guard; NATIVE_OFF (exists = never use the
 # kernel; the crash guard writes it if the engine dies twice in a row while the kernel is on trial).
 # Dev switches (files containing a number): DEBUG (1 = timings to the log), THREADS (2 = the final pass on two cores,
 # the default; 1 = one), BENCH (1 or 2 = synthetic music instead of the input, for reproducible timings: 2 = a loud
-# club mix), COUNT (how many models (the seed: another number, other weights), default 1), KBENCH (exists = time the renderer's inner loops
+# club mix), COUNT (how many (unused), default 1), KBENCH (exists = time the renderer's inner loops
 # once, on the first frame, into the log), ASM (exists = also write the device's assembly of the kernel), DOWN (render
 # at 1/DOWN of the surface's size; default: the full size on stereopsis, half above 400 lines on the stock engine).
 # Written by tools/make_glow_modes.py from the template all glow.h modes share (edit that, not this file).
 
-KERNEL = "transformer"
+KERNEL = "plasma"
 KERNEL_VERSION = 2
 N_COMMON = 21                  # dt, knobs 1-5, fg rgb, bg rgb, level, bass, mid, treble, beat, kick, trig, prefilled, wave Hz
 COUNT = 1
@@ -52,7 +49,7 @@ S = {}                 # all state lives here (the module is re-imported on relo
 
 
 def _log(msg):
-    print("[transformer] " + msg)
+    print("[plasma] " + msg)
 
 
 def _num(root, name, default):
@@ -339,8 +336,8 @@ def _audio(eyesy):
 
 
 def _extras(eyesy, au):
-    """the kernel's parameters after the common ones: the tempo (0 = none yet)"""
-    return [float(getattr(eyesy, "bpm", 0.0) or 0.0) if eyesy is not None else 0.0]
+    """the kernel's parameters after the common ones: 1 while the Trigger button is held (the hand on the glass)"""
+    return [1.0 if eyesy is not None and getattr(eyesy, "key10_status", False) else 0.0]
 
 
 # ---------------------------------------------------------------------------------------------- draw
@@ -437,16 +434,17 @@ def _kbench(lib):
 
 # ---------------------------------------------------------------------------------------------- fallback
 def _fallback(screen, eyesy, fg, level, bass):
-    """a grid of weights lighting row by row with the level: while the kernel compiles, or without gcc"""
+    """a globe with a few jagged filaments: while the kernel compiles, or without gcc"""
     xr, yr = screen.get_width(), screen.get_height()
+    cx, cy = xr // 2, yr // 2
+    r = int(yr * 0.4)
     t = S["t"]
-    n, m = 16, 9
-    s = min(xr // (n + 4), yr // (m + 4))
-    x0, y0 = (xr - n * s) // 2, (yr - m * s) // 2
-    row = int(t * 8) % m
-    for j in range(m):
-        for i in range(n):
-            b = 0.9 if j == row else 0.2 * (0.5 + 0.5 * math.sin(i * 1.7 + j * 2.3 + t))
-            b *= 0.4 + 0.6 * level
-            col = tuple(int(c * b) for c in fg[:3])
-            pygame.draw.circle(screen, col, (x0 + i * s + s // 2, y0 + j * s + s // 2), max(1, s // 4))
+    pygame.draw.circle(screen, tuple(int(c * 0.3) for c in fg[:3]), (cx, cy), r, 1)
+    for k in range(3 + int(level * 6)):
+        a = t * 0.4 + k * 2.1
+        pts = [(cx, cy)]
+        for s in range(1, 8):
+            u = s / 7.0
+            j = math.sin(t * 13 + k * 7 + s * 3) * r * 0.06
+            pts.append((int(cx + math.cos(a) * r * u - math.sin(a) * j), int(cy + math.sin(a) * r * u + math.cos(a) * j)))
+        pygame.draw.lines(screen, fg, False, pts, 1)

@@ -9,7 +9,7 @@ import subprocess
 import threading
 import pygame
 
-# 02 - Swarm - Ribbon
+# 03 - Swarm - Ribbon
 #
 # free.vet's drone-swarm visualizer on the EYESY, one figure per mode - this one: the live waveform wrapped around a ring, rippling up and down as the sound moves
 # Drones pulse with the energy, flash on kicks, twinkle with the treble, and the bass breathes and spins them.
@@ -24,7 +24,7 @@ import pygame
 # The Trigger here is the performer's: the button, the page, MIDI (stereopsis 0.9.1's eyesy.trig_audio tells them from
 # the loudness trigger, which a hot input fires nearly every frame); the bursts with the music come from detected kicks.
 #
-# The Swarm modes (01 - Swarm - Tunnel .. 06 - Swarm - Cymatics) share one compiled kernel and its state:
+# The Swarm modes (02 - Swarm - Tunnel .. 07 - Swarm - Cymatics) share one compiled kernel and its state:
 # switching between them morphs the drones from one figure into the next.
 # Best on stereopsis (its engine analyses the audio: spectrum, waveform, kicks). On the stock engine it still
 # runs, reacting to the level (the spectrum figures hold their rest shapes, no kicks).

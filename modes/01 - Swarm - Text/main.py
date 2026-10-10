@@ -9,7 +9,7 @@ import subprocess
 import threading
 import pygame
 
-# 14 - Swarm - Text
+# 01 - Swarm - Text
 #
 # free.vet's swarm sim writing a word in drones: FREE.VET unless you change it - TEXT below, or the Text box on
 # stereopsis's page. 2400 drones trace the word's outline in Indie Flower with the sim's neighbor physics: each one
